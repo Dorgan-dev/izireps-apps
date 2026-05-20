@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Barlow";
+  src: url(/public/fonts/Barlow-Regular.ttf);
+}
+
+@font-face {
+  font-family: "Poppins";
+  src: url(/public/fonts/Poppins-Regular.ttf);
+}
+
+@font-face {
+  font-family: "Poppins-Extrabold";
+  src: url(/fonts/Poppins-ExtraBold.ttf);
+}
+
+@theme {
+  --font-barlow: "Barlow", sans-serif;
+  --font-poppins: "Poppins", sans-serif;
+  --font-poppins-extrabold: "Poppins-Extrabold", sans-serif;
+  --color-biru: #3b82f6;
+}
