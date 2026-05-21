@@ -19,6 +19,7 @@ Schedule::command('bookings:expire-unverified')->everyFiveMinutes();
 // Cek no-show setiap menit
 Schedule::command('bookings:auto-cancel-noshow')->everyMinute();
 
+Schedule::command('sessions:mark-time-up')->everyMinute();
 
 // ============================================================
 // CATATAN SETUP CRON

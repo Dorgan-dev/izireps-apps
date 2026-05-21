@@ -3,8 +3,8 @@ import { lazy, Suspense } from 'react';
 import { RequireAuth, RequireRole } from './guards';
 import { useAuthStore } from '../store/authStore';
 import PageLoader from '../components/ui/PageLoader';
-import { ActiveSessionList } from '../pages/CashierPages/ActiveSessionList';
-
+// import { ActiveSessionList } from '../pages/CashierPages/ActiveSessionList';
+import PlaySessionsPage from '../pages/CashierPages/SessionPanel';
 const LandingPage = lazy(() => import('../pages/PublicPages/LandingPage'));
 const CustomerLandingPage = lazy(() => import('../pages/CustomerLandingPage'));
 const SignInPage = lazy(() => import('../pages/AuthPages/SignIn'));
@@ -93,7 +93,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <S><CashierDashboard /></S> },
               { path: 'bookings', element: <S><CashierBookings /></S> },
-              { path: 'sessions', element: <S><ActiveSessionList /></S> },
+              { path: 'sessions', element: <S><PlaySessionsPage /></S> },
               { path: 'sessions/:id', element: <S><CashierSessions /></S> },
               { path: 'sessions/:id/checkout', element: <S><CashierCheckout /></S> },
               { path: 'transactions', element: <S><CashierTransactions /></S> },

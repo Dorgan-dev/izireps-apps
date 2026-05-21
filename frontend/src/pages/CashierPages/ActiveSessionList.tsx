@@ -64,7 +64,7 @@ export function ActiveSessionList() {
           return (
             <div
               key={session.id}
-              onClick={() => navigate(`/kasir/sesi/${session.id}`)}
+              onClick={() => navigate(`/cashier/sessions/${session.id}/checkout`)}
               className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4
                 cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
             >

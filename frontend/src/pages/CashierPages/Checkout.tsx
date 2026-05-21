@@ -4,7 +4,8 @@ import { sessionsApi, transactionsApi } from '../../services/api';
 import type { PlaySession, PaymentMethod } from '../../types';
 import { useCartStore } from '../../store/cartStore';
 import { formatRupiah } from '../../components/ui/badge/Badge';
-import { Button, Field, Input, Select } from '../../components/ui/Form';
+import { Button, Field, Input } from '../../components/ui/Form';
+import Select from '../../components/form/Select'
 import { Check } from 'lucide-react';
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -122,11 +123,12 @@ export default function CashierCheckout() {
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6 space-y-4">
         <p className="text-xs font-medium text-gray-500 uppercase">Pembayaran</p>
         <Field label="Metode Pembayaran">
-          <Select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}>
-            {PAYMENT_METHODS.map((m) => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </Select>
+          <Select
+            value={paymentMethod}
+            onChange={(val) => setPaymentMethod(val as PaymentMethod)}
+            options={PAYMENT_METHODS}
+            placeholder="Pilih Metode Pembayaran"
+          />
         </Field>
 
         {paymentMethod === 'cash' && (
@@ -151,7 +153,7 @@ export default function CashierCheckout() {
 
       <Button
         className="w-full"
-        size="lg"
+        size="sm"
         onClick={handleCheckout}
         loading={saving}
         disabled={paymentMethod === 'cash' && paid < remainingAmount}

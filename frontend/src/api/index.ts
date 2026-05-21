@@ -1,5 +1,4 @@
 import axios from 'axios'
-// import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api',
@@ -52,12 +51,19 @@ export const deviceApi = {
 export const sessionApi = {
   list: (params?: object) => api.get('/sessions', { params }),
   show: (id: number) => api.get(`/sessions/${id}`),
-  startWalkIn: (deviceId: number, customer?: { name?: string; phone?: string }) =>
-    api.post('/sessions/start-walkin', { device_id: deviceId, customer }),
+  startWalkIn: (data: {
+    device_id: number
+    session_type: 'per_jam' | 'bebas'
+    duration_minutes?: number
+    customer?: { name?: string; phone?: string }
+    fnb_items?: { fnb_item_id: number; quantity: number }[]
+  }) => api.post('/sessions/start-walkin', data),
   startFromBooking: (bookingId: number) =>
     api.post('/sessions/0/start-booking', { booking_id: bookingId }),
   addFnb: (sessionId: number, items: { fnb_item_id: number; quantity: number }[]) =>
     api.post(`/sessions/${sessionId}/add-fnb`, { items }),
+  extend: (sessionId: number, additionalMinutes: number) =>
+    api.post(`/sessions/${sessionId}/extend`, { additional_minutes: additionalMinutes }),
   checkout: (sessionId: number, paymentMethod: string, amountPaid: number) =>
     api.post(`/sessions/${sessionId}/checkout`, {
       payment_method: paymentMethod,

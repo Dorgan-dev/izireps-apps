@@ -1,133 +1,458 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { PlaySession, FnbCategory, PaymentMethod } from '../../types'
-import { sessionApi, fnbApi } from '../../api'
-import { formatRupiah, formatDuration, getElapsedMinutes, calcGamingCost, paymentMethodLabel } from '../../utils'
-import { Button, Modal, Field, Input, Select, Spinner } from '../../components/common'
+import { PlaySession, FnbCategory, Device, PaymentMethod } from '../../types'
+import { formatRupiah, formatDuration, getElapsedMinutes, calcGamingCost, sessionStatusLabel, sessionStatusBadge, paymentMethodLabel } from '../../utils'
+import { Button, Modal, Field, Input, Spinner, Badge, EmptyState } from '../../components/common'
+import Select from '../../components/form/Select'
+import { sessionApi, deviceApi, fnbApi } from '../../api'
+import toast from 'react-hot-toast'
+import { ActiveSessionList } from './ActiveSessionList'
+import PageBreadcrumb from '../../components/common/PageBreadCrumb'
 
-function useTimer(startedAt: string | null) {
-  const [m, setM] = useState(startedAt ? getElapsedMinutes(startedAt) : 0)
+// ─── Timer ───────────────────────────────────────────────────────────────────
+function ElapsedTimer({ startedAt }: { startedAt: string }) {
+  const [m, setM] = useState(getElapsedMinutes(startedAt))
   useEffect(() => {
-    if (!startedAt) return
-    setM(getElapsedMinutes(startedAt))
     const id = setInterval(() => setM(getElapsedMinutes(startedAt)), 30_000)
     return () => clearInterval(id)
   }, [startedAt])
-  return m
+  return <span className="tabular-nums font-medium">{formatDuration(m)}</span>
 }
 
-function FnbOrderModal({ sessionId, onClose }: { sessionId: number; onClose: () => void }) {
+// ─── Countdown untuk sesi per_jam ────────────────────────────────────────────
+function CountdownTimer({ plannedEndAt }: { plannedEndAt: string }) {
+  const calc = () => {
+    const diff = Math.max(0, Math.floor((new Date(plannedEndAt).getTime() - Date.now()) / 60000))
+    return diff
+  }
+  const [remaining, setRemaining] = useState(calc)
+  useEffect(() => {
+    const id = setInterval(() => setRemaining(calc()), 30_000)
+    return () => clearInterval(id)
+  }, [plannedEndAt])
+
+  if (remaining <= 0) return <span className="text-red-600 font-medium tabular-nums">Waktu habis</span>
+  return (
+    <span className={`tabular-nums font-medium ${remaining <= 10 ? 'text-red-500' : 'text-gray-700'}`}>
+      sisa {formatDuration(remaining)}
+    </span>
+  )
+}
+
+// ─── Modal sesi baru (walk-in) ────────────────────────────────────────────────
+// ⚠️ SESUAIKAN: POST /api/sessions/start-walkin
+//   request body: { device_id, session_type, duration_minutes?, customer?, fnb_items? }
+function NewSessionModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
+  const navigate = useNavigate()
+
+  const [deviceId, setDeviceId] = useState('')
+  const [sessionType, setSessionType] = useState<'per_jam' | 'bebas'>('bebas')
+  const [hours, setHours] = useState('1')
+  const [minutes, setMinutes] = useState('0')
+  const [custName, setCustName] = useState('')
+  const [custPhone, setCustPhone] = useState('')
   const [cart, setCart] = useState<Record<number, number>>({})
-  const { data: cats, isLoading } = useQuery({
+  const [step, setStep] = useState<1 | 2>(1)
+
+  const { data: devices } = useQuery({
+    queryKey: ['devices'],
+    queryFn: () => deviceApi.list().then(r => r.data.data as Device[]),
+  })
+
+  const { data: cats } = useQuery({
     queryKey: ['fnb-categories'],
     queryFn: () => fnbApi.categories().then(r => r.data.data as FnbCategory[]),
   })
-  const mutation = useMutation({
-    mutationFn: () => sessionApi.addFnb(sessionId,
-      Object.entries(cart).filter(([, q]) => q > 0).map(([id, quantity]) => ({ fnb_item_id: Number(id), quantity }))
-    ),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['session', sessionId] }); onClose() },
-  })
+
+  const availableDevices = (devices ?? []).filter(d => d.status === 'available')
+  const allItems = (cats ?? []).flatMap(c => c.items ?? []).filter(i => i.is_available && i.stock > 0)
+  const totalDurationMin = (parseInt(hours) || 1) * 60 + (parseInt(minutes) || 0)
+
   const adjust = (id: number, d: number, max: number) =>
-    setCart(p => { const n = Math.max(0, Math.min(max, (p[id] ?? 0) + d)); if (!n) { const { [id]: _, ...r } = p; return r }; return { ...p, [id]: n } })
-  const allItems = cats?.flatMap(c => c.items ?? []) ?? []
-  const totalQty = Object.values(cart).reduce((a, b) => a + b, 0)
-  const totalPrice = Object.entries(cart).reduce((s, [id, q]) => s + (allItems.find(i => i.id === Number(id))?.price ?? 0) * q, 0)
+    setCart(p => {
+      const n = Math.max(0, Math.min(max, (p[id] ?? 0) + d))
+      if (!n) { const { [id]: _, ...r } = p; return r }
+      return { ...p, [id]: n }
+    })
+
+  const totalFnbPrice = Object.entries(cart).reduce((s, [id, q]) => {
+    const item = allItems.find(i => i.id === Number(id))
+    return s + (item?.price ?? 0) * q
+  }, 0)
+
+  const mutation = useMutation({
+    mutationFn: () => sessionApi.startWalkIn({
+      device_id: Number(deviceId),
+      session_type: sessionType,
+      duration_minutes: sessionType === 'per_jam' ? totalDurationMin : undefined,
+      customer: custName || custPhone ? { name: custName, phone: custPhone } : undefined,
+      fnb_items: Object.entries(cart).filter(([, q]) => q > 0)
+        .map(([id, quantity]) => ({ fnb_item_id: Number(id), quantity })),
+    }),
+    onSuccess: res => {
+      qc.invalidateQueries({ queryKey: ['play_sessions'] })
+      qc.invalidateQueries({ queryKey: ['devices'] })
+      onClose()
+      navigate(`/cashier`) // Back to dashboard or keep it here since it auto updates
+    },
+  })
+
   return (
-    <div className="flex flex-col gap-4">
-      {isLoading ? <Spinner className="py-8" /> : cats?.map(cat =>
-        (cat.items?.filter(i => i.is_available && i.stock > 0).length ?? 0) > 0 && (
-          <div key={cat.id}>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">{cat.name}</p>
-            {cat.items!.filter(i => i.is_available && i.stock > 0).map(item => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                <div><p className="text-sm font-medium text-gray-800">{item.name}</p><p className="text-xs text-gray-400">{formatRupiah(item.price)} · Stok: {item.stock}</p></div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => adjust(item.id, -1, item.stock)} className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">−</button>
-                  <span className="w-6 text-center text-sm font-medium">{cart[item.id] ?? 0}</span>
-                  <button onClick={() => adjust(item.id, 1, item.stock)} className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">+</button>
-                </div>
+    <>
+      <div className="flex flex-col gap-5">
+        {/* ── Step indicator ── */}
+        <div className="flex items-center gap-2">
+          {[1, 2].map(s => (
+            <div key={s} className="flex items-center gap-2">
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${step >= s ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400'
+                }`}>{s}</div>
+              <span className={`text-xs ${step >= s ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+                {s === 1 ? 'Sesi & perangkat' : 'Pelanggan & F&B'}
+              </span>
+              {s < 2 && <span className="text-gray-200 mx-1">──</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* ── Step 1: Perangkat & jenis waktu ── */}
+        {step === 1 && (
+          <div className="flex flex-col gap-4">
+            <Field label="Pilih perangkat">
+              <Select
+                value={deviceId}
+                onChange={(val) => setDeviceId(val)}
+                options={availableDevices.map((d) => ({
+                  value: String(d.id),
+                  label: `${d.name} (${d.ps_type})${d.current_rate
+                    ? ` · Rp ${Number(d.current_rate.price_per_hour).toLocaleString('id-ID')}/jam`
+                    : ""
+                    }`,
+                }))}
+                placeholder="Pilih Device" />
+              {!availableDevices.length && (
+                <p className="text-xs text-red-500 mt-1">Tidak ada perangkat yang tersedia saat ini.</p>
+              )}
+            </Field>
+
+            {/* Pilihan jenis waktu */}
+            <Field label="Jenis waktu bermain">
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { value: 'bebas', label: 'Bebas', desc: 'Tidak ada batas waktu' },
+                  { value: 'per_jam', label: 'Per Jam', desc: 'Tentukan durasi di awal' },
+                ] as const).map(opt => (
+                  <button
+                    key={opt.value}
+                    onClick={() => setSessionType(opt.value)}
+                    className={`p-3 rounded-xl border-2 text-left transition-colors ${sessionType === opt.value
+                      ? 'border-gray-900 bg-gray-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                  >
+                    <p className="font-medium text-sm text-gray-900">{opt.label}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{opt.desc}</p>
+                  </button>
+                ))}
               </div>
-            ))}
+            </Field>
+
+            {/* Input durasi jika per_jam */}
+            {sessionType === 'per_jam' && (
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col gap-3">
+                <p className="text-xs font-medium text-blue-700">Tentukan durasi bermain (minimal 1 jam)</p>
+                <Field label="Jam">
+                  <Select
+                    value={String(hours)}
+                    onChange={(val) => setHours(String(val))}
+                    options={[1, 2, 3, 4, 5, 6].map(h => ({
+                      value: String(h),
+                      label: `${h} jam`
+                    }))}
+                    placeholder="Pilih jam"
+                  />
+                </Field>
+                <p className="text-xs text-blue-600">
+                  Total: <span className="font-medium">{formatDuration(totalDurationMin)}</span>
+                  {' '}· Sesi berakhir pukul{' '}
+                  <span className="font-medium">
+                    {new Date(Date.now() + totalDurationMin * 60000)
+                      .toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </p>
+              </div>
+            )}
+            <div className="flex justify-end pt-1">
+              <Button variant="primary" disabled={!deviceId} onClick={() => setStep(2)}>
+                Lanjutkan →
+              </Button>
+            </div>
           </div>
-        )
-      )}
-      {totalQty > 0 && <div className="bg-gray-50 rounded-xl px-4 py-3 flex justify-between text-sm"><span className="text-gray-500">{totalQty} item</span><span className="font-medium">{formatRupiah(totalPrice)}</span></div>}
-      <div className="flex gap-3 justify-end pt-1 border-t border-gray-100">
+        )}
+
+        {/* ── Step 2: Data pelanggan & F&B ── */}
+        {step === 2 && (
+          <div className="flex flex-col gap-4">
+            {/* Data pelanggan — opsional */}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Data pelanggan <span className="text-gray-300 font-normal normal-case">(opsional)</span>
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Nama">
+                  <Input value={custName} onChange={e => setCustName(e.target.value)}
+                    placeholder="cth. Budi Santoso" />
+                </Field>
+                <Field label="No HP">
+                  <Input type="tel" value={custPhone} onChange={e => setCustPhone(e.target.value)}
+                    placeholder="cth. 0812xxxx" />
+                </Field>
+              </div>
+            </div>
+
+            {/* Order F&B — opsional */}
+            <div className="flex flex-col gap-3">
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Order F&B <span className="text-gray-300 font-normal normal-case">(opsional)</span>
+              </p>
+              {!allItems.length ? (
+                <p className="text-xs text-gray-400">Tidak ada item F&B tersedia.</p>
+              ) : (
+                <div className="max-h-52 overflow-y-auto flex flex-col gap-1 pr-1">
+                  {(cats ?? []).map(cat => {
+                    const catItems = (cat.items ?? []).filter(i => i.is_available && i.stock > 0)
+                    if (!catItems.length) return null
+                    return (
+                      <div key={cat.id} className="mb-2">
+                        <p className="text-xs font-medium text-gray-400 mb-1">{cat.name}</p>
+                        {catItems.map(item => (
+                          <div key={item.id}
+                            className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                            <div>
+                              <p className="text-sm text-gray-800">{item.name}</p>
+                              <p className="text-xs text-gray-400">{formatRupiah(item.price)}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button onClick={() => adjust(item.id, -1, item.stock)}
+                                className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">−</button>
+                              <span className="w-5 text-center text-sm font-medium">{cart[item.id] ?? 0}</span>
+                              <button onClick={() => adjust(item.id, 1, item.stock)}
+                                className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">+</button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {totalFnbPrice > 0 && (
+                <div className="bg-gray-50 rounded-xl px-3 py-2 flex justify-between text-sm">
+                  <span className="text-gray-500">Subtotal F&B</span>
+                  <span className="font-medium">{formatRupiah(totalFnbPrice)}</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 justify-between pt-1 border-t border-gray-100">
+              <Button variant="secondary" onClick={() => setStep(1)}>← Kembali</Button>
+              <Button variant="primary" loading={mutation.isPending} onClick={() => mutation.mutate()}>
+                ▶ Mulai sesi
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── Modal Tambah F&B (Sesi Aktif) ────────────────────────────────────────────
+function AddFnbModal({ session, onClose }: { session: PlaySession, onClose: () => void }) {
+  const qc = useQueryClient()
+  const [cart, setCart] = useState<Record<number, number>>({})
+
+  const { data: cats } = useQuery({
+    queryKey: ['fnb-categories'],
+    queryFn: () => fnbApi.categories().then(r => r.data.data as FnbCategory[]),
+  })
+
+  const allItems = (cats ?? []).flatMap(c => c.items ?? []).filter(i => i.is_available && i.stock > 0)
+
+  const adjust = (id: number, d: number, max: number) =>
+    setCart(p => {
+      const n = Math.max(0, Math.min(max, (p[id] ?? 0) + d))
+      if (!n) { const { [id]: _, ...r } = p; return r }
+      return { ...p, [id]: n }
+    })
+
+  const totalFnbPrice = Object.entries(cart).reduce((s, [id, q]) => {
+    const item = allItems.find(i => i.id === Number(id))
+    return s + (item?.price ?? 0) * q
+  }, 0)
+
+  const mutation = useMutation({
+    mutationFn: () => {
+      const items = Object.entries(cart).filter(([, q]) => q > 0)
+        .map(([id, quantity]) => ({ fnb_item_id: Number(id), quantity }))
+      return sessionApi.addFnb(session.id, items)
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['play_sessions'] })
+      qc.invalidateQueries({ queryKey: ['fnb-categories'] })
+      onClose()
+      toast.success('Berhasil menambah pesanan F&B!')
+    },
+    onError: () => {
+      toast.error('Gagal menambah F&B')
+    }
+  })
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="bg-gray-50 p-3 rounded-xl mb-2">
+        <p className="text-sm font-medium text-gray-900">Pesanan untuk {session.device?.name ?? 'Sesi Aktif'}</p>
+        <p className="text-xs text-gray-500">{session.customer?.name ?? 'Walk-in'}</p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        {!allItems.length ? (
+          <p className="text-xs text-gray-400">Tidak ada item F&B tersedia.</p>
+        ) : (
+          <div className="max-h-72 overflow-y-auto flex flex-col gap-1 pr-1">
+            {(cats ?? []).map(cat => {
+              const catItems = (cat.items ?? []).filter(i => i.is_available && i.stock > 0)
+              if (!catItems.length) return null
+              return (
+                <div key={cat.id} className="mb-2">
+                  <p className="text-xs font-medium text-gray-400 mb-1">{cat.name}</p>
+                  {catItems.map(item => (
+                    <div key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                      <div>
+                        <p className="text-sm text-gray-800">{item.name}</p>
+                        <p className="text-xs text-gray-400">{formatRupiah(item.price)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => adjust(item.id, -1, item.stock)}
+                          className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">−</button>
+                        <span className="w-5 text-center text-sm font-medium">{cart[item.id] ?? 0}</span>
+                        <button onClick={() => adjust(item.id, 1, item.stock)}
+                          className="w-7 h-7 rounded-full border border-gray-200 hover:bg-gray-100 flex items-center justify-center text-sm">+</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )}
+        {totalFnbPrice > 0 && (
+          <div className="bg-gray-50 rounded-xl px-3 py-2 flex justify-between text-sm">
+            <span className="text-gray-500">Subtotal</span>
+            <span className="font-medium text-gray-900">{formatRupiah(totalFnbPrice)}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex gap-3 justify-end pt-3 border-t border-gray-100 mt-2">
         <Button variant="secondary" onClick={onClose}>Batal</Button>
-        <Button variant="primary" disabled={totalQty === 0} loading={mutation.isPending} onClick={() => mutation.mutate()}>Tambah ke sesi</Button>
+        <Button variant="primary" loading={mutation.isPending} disabled={totalFnbPrice === 0} onClick={() => mutation.mutate()}>
+          Pesan & Masukkan Tagihan
+        </Button>
       </div>
     </div>
   )
 }
 
-function ExtendModal({ sessionId, onClose }: { sessionId: number; onClose: () => void }) {
-  const qc = useQueryClient()
-  const [mins, setMins] = useState('30')
-  const mutation = useMutation({
-    // ⚠️ SESUAIKAN: tambahkan extend() ke sessionApi jika belum ada
-    // mutationFn: () => sessionApi.extend(sessionId, Number(mins)),
-    mutationFn: () => Promise.resolve(), // placeholder
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['session', sessionId] }); onClose() },
-  })
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-gray-500">Pilih durasi penambahan waktu (kelipatan 15 menit).</p>
-      <div className="grid grid-cols-3 gap-2">
-        {[15, 30, 45, 60, 90, 120].map(opt => (
-          <button key={opt} onClick={() => setMins(String(opt))}
-            className={`py-3 rounded-xl text-sm font-medium border transition-colors ${
-              mins === String(opt) ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-200 hover:border-gray-400'
-            }`}>{formatDuration(opt)}</button>
-        ))}
-      </div>
-      <div className="flex gap-3 justify-end pt-1 border-t border-gray-100">
-        <Button variant="secondary" onClick={onClose}>Batal</Button>
-        <Button variant="primary" loading={mutation.isPending} onClick={() => mutation.mutate()}>+ Tambah {formatDuration(Number(mins))}</Button>
-      </div>
-    </div>
-  )
-}
+// ─── Kartu sesi aktif ─────────────────────────────────────────────────────────
+function SessionCard({ session, onAddFnb }: { session: PlaySession, onAddFnb: (s: PlaySession) => void }) {
+  const navigate = useNavigate()
+  const isTimeUp = session.status === 'time_up'
+  const isExtended = session.extend_count > 0
 
-function CheckoutModal({ session, onClose, onSuccess }: { session: PlaySession; onClose: () => void; onSuccess: () => void }) {
-  const qc = useQueryClient()
-  const [method, setMethod] = useState<PaymentMethod>('cash')
-  const [amountPaid, setAmountPaid] = useState('')
-  const trx = session.transaction
-  const remaining = trx?.remaining_amount ?? 0
-  const paid = Number(amountPaid) || 0
-  const change = Math.max(0, paid - remaining)
-  const mutation = useMutation({
-    mutationFn: () => sessionApi.checkout(session.id, method, paid),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['devices'] }); qc.invalidateQueries({ queryKey: ['sessions'] }); onSuccess() },
-  })
   return (
-    <div className="flex flex-col gap-4">
-      <div className="bg-gray-50 rounded-xl p-4 flex flex-col gap-2 text-sm">
-        <div className="flex justify-between text-gray-600"><span>Biaya bermain</span><span>{formatRupiah(trx?.gaming_total ?? 0)}</span></div>
-        {(trx?.fnb_total ?? 0) > 0 && <div className="flex justify-between text-gray-600"><span>F&B</span><span>{formatRupiah(trx?.fnb_total ?? 0)}</span></div>}
-        {(trx?.dp_paid ?? 0) > 0 && <div className="flex justify-between text-green-600"><span>DP dibayar</span><span>− {formatRupiah(trx?.dp_paid ?? 0)}</span></div>}
-        <div className="flex justify-between font-medium text-gray-900 border-t border-gray-200 pt-2"><span>Total bayar</span><span>{formatRupiah(remaining)}</span></div>
+    <div
+      onClick={() => navigate(`/cashier/sessions/${session.id}/checkout`)}
+      className={`bg-white border-2 rounded-2xl p-4 flex flex-col gap-3 cursor-pointer
+        hover:shadow-sm transition-all ${isTimeUp ? 'border-red-200' : 'border-gray-100 hover:border-gray-300'}`}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isTimeUp ? 'bg-red-400' : 'bg-amber-400 animate-pulse'
+            }`} />
+          <div>
+            <p className="font-medium text-gray-900 text-sm">{session.device?.name ?? '—'}</p>
+            <p className="text-xs text-gray-400">{session.device?.ps_type}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          {isExtended && (
+            <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">
+              🔄 +{session.extend_count}×
+            </span>
+          )}
+          <Badge
+            label={session.session_type === 'per_jam' ? 'Per Jam' : 'Bebas'}
+            className="bg-gray-100 text-gray-600 text-xs"
+          />
+          <Badge
+            label={sessionStatusLabel[session.status]}
+            className={sessionStatusBadge[session.status]}
+          />
+        </div>
       </div>
-      <Field label="Metode pembayaran">
-        <Select value={method} onChange={e => setMethod(e.target.value as PaymentMethod)}>
-          {(['cash', 'qris', 'transfer'] as PaymentMethod[]).map(m => <option key={m} value={m}>{paymentMethodLabel[m]}</option>)}
-        </Select>
-      </Field>
-      {method === 'cash' && (
-        <Field label="Nominal dibayar (Rp)">
-          <Input type="number" placeholder="0" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
-          {paid >= remaining && paid > 0 && <p className="text-sm text-green-600 font-medium mt-1">Kembalian: {formatRupiah(change)}</p>}
-          {paid > 0 && paid < remaining && <p className="text-xs text-red-500 mt-1">Nominal kurang</p>}
-        </Field>
+
+      {/* Info pelanggan */}
+      <p className="text-xs text-gray-500">
+        {session.customer?.name ?? 'Walk-in'}
+        {session.booking_id && <span className="ml-1 text-blue-400">· Booking #{session.booking_id}</span>}
+      </p>
+
+      {/* Timer */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="bg-gray-50 rounded-xl px-3 py-2">
+          <p className="text-xs text-gray-400 mb-0.5">Durasi</p>
+          <ElapsedTimer startedAt={session.started_at} />
+        </div>
+        {session.session_type === 'per_jam' && session.planned_end_at && (
+          <div className={`rounded-xl px-3 py-2 ${isTimeUp ? 'bg-red-50' : 'bg-gray-50'}`}>
+            <p className="text-xs text-gray-400 mb-0.5">Waktu</p>
+            {isTimeUp
+              ? <span className="text-red-600 font-medium text-sm">Waktu habis!</span>
+              : <CountdownTimer plannedEndAt={session.planned_end_at} />
+            }
+          </div>
+        )}
+      </div>
+
+      {/* Aksi cepat untuk time_up */}
+      {isTimeUp && (
+        <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2 text-xs text-red-600 font-medium">
+          ⏰ Waktu bermain habis — segera selesaikan transaksi
+        </div>
       )}
-      <div className="flex gap-3 justify-end pt-1 border-t border-gray-100">
-        <Button variant="secondary" onClick={onClose}>Batal</Button>
-        <Button variant="primary" loading={mutation.isPending}
-          disabled={method === 'cash' && (paid < remaining || paid === 0)}
-          onClick={() => mutation.mutate()}>Selesaikan sesi</Button>
+
+      {/* Aksi Sesi */}
+      <div className="flex gap-2 mt-1 border-t border-gray-50 pt-3">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1 bg-amber-50 hover:bg-amber-100 text-amber-700 border-amber-200"
+          onClick={(e) => { e.stopPropagation(); onAddFnb(session); }}
+        >
+          🍔 Tambah F&B
+        </Button>
+        <Button
+          variant="primary"
+          size="sm"
+          className="flex-1"
+          onClick={(e) => { e.stopPropagation(); navigate(`/cashier/sessions/${session.id}/checkout`); }}
+        >
+          Checkout
+        </Button>
       </div>
     </div>
   )
@@ -135,96 +460,114 @@ function CheckoutModal({ session, onClose, onSuccess }: { session: PlaySession; 
 
 // ─── Komponen utama ───────────────────────────────────────────────────────────
 // ⚠️ SESUAIKAN:
-//   - sessionId → dari useParams<{ id: string }>() di halaman /kasir/sesi/:id
-//   - GET /api/sessions/:id harus return: device, customer, booking, transaction (+ items)
-export default function SessionPanel() {
-  const { id } = useParams<{ id: string }>()
-  const sessionId = Number(id)
-  const navigate = useNavigate()
-  const [showFnb, setShowFnb]           = useState(false)
-  const [showExtend, setShowExtend]     = useState(false)
-  const [showCheckout, setShowCheckout] = useState(false)
+//   - Path file: src/components/cashier/PlaySessionsPage.tsx
+//     (atau src/pages/cashier/ sesuai struktur proyekmu)
+//   - GET /api/sessions?status=active,time_up → harus return: device, customer, booking, transaction
+//   - navigate ke /kasir/sesi/:id — sesuaikan jika route berbeda
+export function PlaySessionsPage() {
+  const [showNew, setShowNew] = useState(false)
+  const [fnbSession, setFnbSession] = useState<PlaySession | null>(null)
 
-  const { data: session, isLoading } = useQuery({
-    queryKey: ['session', sessionId],
-    queryFn: () => sessionApi.show(sessionId).then(r => r.data.data as PlaySession),
-    refetchInterval: 30_000,
+  const { data: sessions, isLoading } = useQuery({
+    queryKey: ['play_sessions', 'open'],
+    queryFn: () =>
+      sessionApi.list({ status: 'active,time_up' })
+        .then(r => r.data.data as PlaySession[]),
+    refetchInterval: 10_000,
   })
 
-  const elapsed     = useTimer(session?.started_at ?? null)
-  const pricePerHour = session?.device?.current_rate?.price_per_hour ?? 0
-  const gamingEst   = calcGamingCost(elapsed, pricePerHour)
-  const fnbTotal    = session?.transaction?.fnb_total ?? 0
-  const dpPaid      = session?.transaction?.dp_paid   ?? 0
-  const grandEst    = Math.max(0, gamingEst + fnbTotal - dpPaid)
-
-  if (isLoading) return <Spinner className="py-20" />
-  if (!session)  return <div className="py-20 text-center text-gray-400">Sesi tidak ditemukan</div>
-
-  const isActive = session.status === 'active'
+  const all = sessions ?? []
+  const timeUps = all.filter(s => s.status === 'time_up')
+  const actives = all.filter(s => s.status === 'active')
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-5">
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate('/cashier')} className="text-gray-400 hover:text-gray-700 text-sm">← Kembali</button>
-        <h1 className="text-base font-medium text-gray-900">Sesi — {session.device?.name}</h1>
-        <span className={`ml-auto text-xs font-medium px-2 py-1 rounded-full ${isActive ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-          {isActive ? 'Aktif' : 'Selesai'}
-        </span>
-      </div>
-
-      {isActive && (
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-2xl p-6 text-center">
-          <p className="text-xs text-amber-600 uppercase tracking-wide mb-1">Durasi bermain</p>
-          <p className="text-5xl font-medium text-amber-700 tabular-nums">{formatDuration(elapsed)}</p>
-          <p className="text-sm text-amber-500 mt-2">Est. biaya: {formatRupiah(gamingEst)}</p>
-          {session.customer && <p className="text-sm text-amber-600 mt-1">Pelanggan: {session.customer.name}</p>}
-          {session.booking  && <p className="text-xs text-amber-500 mt-0.5">Booking #{session.booking.id}</p>}
-        </div>
-      )}
-
-      {(session.transaction?.items?.length ?? 0) > 0 && (
-        <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wide px-4 py-3 border-b border-gray-100">Order F&B</p>
-          {session.transaction?.items?.map(item => (
-            <div key={item.id} className="flex justify-between px-4 py-3 border-b border-gray-50 last:border-0 text-sm">
-              <span className="text-gray-700">{item.item_name} × {item.quantity}</span>
-              <span className="font-medium">{formatRupiah(item.subtotal)}</span>
-            </div>
-          ))}
-          <div className="flex justify-between px-4 py-3 bg-gray-50 text-sm">
-            <span className="text-gray-500">Subtotal F&B</span>
-            <span className="font-medium">{formatRupiah(fnbTotal)}</span>
+    <><PageBreadcrumb pageTitle='Play session' pageDescription='Pelanggan yang sedang bermain akan tercatat dalam sesi' />
+      <div className="flex flex-col gap-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-lg font-medium text-gray-900">Play Sessions</h1>
+            <p className="text-sm text-gray-400">
+              {all.length} sesi berjalan
+              {timeUps.length > 0 && (
+                <span className="ml-2 text-red-500 font-medium">· {timeUps.length} waktu habis</span>
+              )}
+            </p>
           </div>
+          <Button variant="primary" onClick={() => setShowNew(true)}>
+            + Sesi baru
+          </Button>
         </div>
-      )}
+        <ActiveSessionList />
 
-      <div className="bg-gray-50 rounded-2xl p-4 flex flex-col gap-2 text-sm">
-        <div className="flex justify-between text-gray-600"><span>Est. biaya bermain ({formatDuration(elapsed)})</span><span>{formatRupiah(gamingEst)}</span></div>
-        {fnbTotal > 0 && <div className="flex justify-between text-gray-600"><span>F&B</span><span>{formatRupiah(fnbTotal)}</span></div>}
-        {dpPaid  > 0 && <div className="flex justify-between text-green-600"><span>DP dibayar</span><span>− {formatRupiah(dpPaid)}</span></div>}
-        <div className="flex justify-between font-medium text-gray-900 border-t border-gray-200 pt-2"><span>Est. total</span><span>{formatRupiah(grandEst)}</span></div>
-      </div>
-
-      {isActive && (
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <Button variant="secondary" className="w-full" onClick={() => setShowFnb(true)}>+ Order F&B</Button>
-            <Button variant="secondary" className="w-full" onClick={() => setShowExtend(true)}>+ Tambah waktu</Button>
+        {/* Alert time_up */}
+        {timeUps.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+            <span>🔴</span>
+            <span>
+              <strong>{timeUps.length} sesi</strong> waktunya sudah habis dan menunggu tindakan.
+              Segera extend atau checkout.
+            </span>
           </div>
-          <Button variant="primary" size="lg" className="w-full" onClick={() => setShowCheckout(true)}>Selesaikan & checkout</Button>
-        </div>
-      )}
+        )}
 
-      <Modal open={showFnb} onClose={() => setShowFnb(false)} title="Order F&B" maxWidth="max-w-lg">
-        <FnbOrderModal sessionId={session.id} onClose={() => setShowFnb(false)} />
-      </Modal>
-      <Modal open={showExtend} onClose={() => setShowExtend(false)} title="Tambah waktu bermain">
-        <ExtendModal sessionId={session.id} onClose={() => setShowExtend(false)} />
-      </Modal>
-      <Modal open={showCheckout} onClose={() => setShowCheckout(false)} title="Checkout">
-        <CheckoutModal session={session} onClose={() => setShowCheckout(false)} onSuccess={() => navigate('/cashier')} />
-      </Modal>
-    </div>
+        {/* List sesi */}
+        {isLoading ? (
+          <Spinner className="py-16" />
+        ) : !all.length ? (
+          <EmptyState
+            icon="🎮"
+            title="Tidak ada sesi aktif"
+            description='Klik "Sesi baru" untuk memulai sesi walk-in'
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            {/* time_up duluan */}
+            {timeUps.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-medium text-red-500 uppercase tracking-wide">Waktu Habis</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {timeUps.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
+                </div>
+              </div>
+            )}
+            {/* Sesi aktif */}
+            {actives.length > 0 && (
+              <div className="flex flex-col gap-3">
+                {timeUps.length > 0 && (
+                  <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Sedang Bermain</p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {actives.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal sesi baru */}
+        <Modal
+          open={showNew}
+          onClose={() => setShowNew(false)}
+          title="Sesi baru — Walk-in"
+          maxWidth="max-w-lg"
+        >
+          <NewSessionModal onClose={() => setShowNew(false)} />
+        </Modal>
+
+        {/* Modal tambah F&B */}
+        <Modal
+          open={!!fnbSession}
+          onClose={() => setFnbSession(null)}
+          title="Tambah F&B"
+          maxWidth="max-w-md"
+        >
+          {fnbSession && (
+            <AddFnbModal session={fnbSession} onClose={() => setFnbSession(null)} />
+          )}
+        </Modal>
+      </div></>
   )
 }
+
+export default PlaySessionsPage;

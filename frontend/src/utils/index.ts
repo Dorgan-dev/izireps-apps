@@ -59,3 +59,17 @@ export const bookingStatusBadge: Record<BookingStatus, string> = {
 export const paymentMethodLabel: Record<PaymentMethod, string> = {
   cash: 'Tunai', qris: 'QRIS', transfer: 'Transfer bank',
 }
+
+export const sessionStatusLabel: Record<string, string> = {
+  active:    'Aktif',
+  time_up:   'Waktu Habis',
+  completed: 'Selesai',
+  cancelled: 'Dibatalkan',
+}
+
+export const sessionStatusBadge: Record<string, string> = {
+  active:    'bg-amber-100 text-amber-800',
+  time_up:   'bg-red-100 text-red-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-gray-100 text-gray-500',
+}
