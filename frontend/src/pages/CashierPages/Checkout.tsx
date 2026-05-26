@@ -7,6 +7,7 @@ import { formatRupiah } from '../../components/ui/badge/Badge';
 import { Button, Field, Input } from '../../components/ui/Form';
 import Select from '../../components/form/Select'
 import { Check } from 'lucide-react';
+import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
   { value: 'cash', label: 'Tunai' },
@@ -79,88 +80,101 @@ export default function CashierCheckout() {
   }
 
   return (
-    <div className="max-w-lg mx-auto">
-      <h1 className="text-xl font-bold text-white mb-6">Checkout</h1>
-
-      {/* Session info */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4">
-        <p className="text-sm font-semibold text-white mb-3">{session.device?.name}</p>
-        <div className="space-y-2 text-sm">
-          <Row label="Mulai" value={new Date(session.started_at).toLocaleTimeString('id-ID')} />
-          <Row label="Durasi" value={`${durationMinutes} menit`} />
-          {session.customer && <Row label="Pelanggan" value={session.customer.name} />}
-        </div>
-      </div>
-
-      {/* FnB items */}
-      {cart.length > 0 && (
+    <><PageBreadcrumb
+      // pageTitle='Detail'
+      pageDescription='Lihat informasi detail sesi bermain'
+        items={[
+          {
+            label: 'Sesi bermain',
+            path: '/cashier/sessions'
+          },
+          {
+            label: 'Detail',
+            path: `/cashier/sessions/${id}`
+          }
+        ]}>
+    </PageBreadcrumb>
+      <div className="max-w-lg mx-auto">
+        {/* Session info */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4">
-          <p className="text-xs font-medium text-gray-500 uppercase mb-3">Item FnB</p>
-          {cart.map((item) => (
-            <div key={item.fnb_item_id} className="flex justify-between text-sm py-1.5">
-              <span className="text-gray-300">{item.name} ×{item.quantity}</span>
-              <span className="text-white">{formatRupiah(item.subtotal)}</span>
-            </div>
-          ))}
+          <p className="text-sm font-semibold text-white mb-3">{session.device?.name}</p>
+          <div className="space-y-2 text-sm">
+            <Row label="Mulai" value={new Date(session.started_at).toLocaleTimeString('id-ID')} />
+            <Row label="Durasi" value={`${durationMinutes} menit`} />
+            {session.customer && <Row label="Pelanggan" value={session.customer.name} />}
+          </div>
         </div>
-      )}
 
-      {/* Cost breakdown */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4 space-y-2">
-        <p className="text-xs font-medium text-gray-500 uppercase mb-3">Rincian Biaya</p>
-        <Row label="Biaya Gaming" value={formatRupiah(gamingTotal)} note="dihitung oleh backend" />
-        <Row label="Biaya FnB" value={formatRupiah(fnbTotal)} />
-        <div className="border-t border-gray-800 pt-2 mt-2">
-          <Row label="Total" value={formatRupiah(grandTotal)} bold />
-        </div>
-        {dpPaid > 0 && <Row label="DP Terbayar" value={`−${formatRupiah(dpPaid)}`} />}
-        <div className="border-t border-gray-800 pt-2">
-          <Row label="Sisa yang Harus Dibayar" value={formatRupiah(remainingAmount)} bold />
-        </div>
-      </div>
-
-      {/* Payment */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6 space-y-4">
-        <p className="text-xs font-medium text-gray-500 uppercase">Pembayaran</p>
-        <Field label="Metode Pembayaran">
-          <Select
-            value={paymentMethod}
-            onChange={(val) => setPaymentMethod(val as PaymentMethod)}
-            options={PAYMENT_METHODS}
-            placeholder="Pilih Metode Pembayaran"
-          />
-        </Field>
-
-        {paymentMethod === 'cash' && (
-          <>
-            <Field label="Uang yang Diterima (Rp)">
-              <Input
-                type="number"
-                value={amountPaid}
-                onChange={(e) => setAmountPaid(e.target.value)}
-                placeholder={String(remainingAmount)}
-              />
-            </Field>
-            {paid > 0 && (
-              <div className="bg-gray-800 rounded-lg px-4 py-3 flex justify-between text-sm">
-                <span className="text-gray-400">Kembalian</span>
-                <span className="font-bold text-emerald-400">{formatRupiah(change)}</span>
+        {/* FnB items */}
+        {cart.length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4">
+            <p className="text-xs font-medium text-gray-500 uppercase mb-3">Item FnB</p>
+            {cart.map((item) => (
+              <div key={item.fnb_item_id} className="flex justify-between text-sm py-1.5">
+                <span className="text-gray-300">{item.name} ×{item.quantity}</span>
+                <span className="text-white">{formatRupiah(item.subtotal)}</span>
               </div>
-            )}
-          </>
+            ))}
+          </div>
         )}
-      </div>
 
-      <Button
-        className="w-full"
-        size="sm"
-        onClick={handleCheckout}
-        loading={saving}
-        disabled={paymentMethod === 'cash' && paid < remainingAmount}
-      >
-        Selesaikan Transaksi
-      </Button>
-    </div>
+        {/* Cost breakdown */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4 space-y-2">
+          <p className="text-xs font-medium text-gray-500 uppercase mb-3">Rincian Biaya</p>
+          <Row label="Biaya Gaming" value={formatRupiah(gamingTotal)} note="dihitung oleh backend" />
+          <Row label="Biaya FnB" value={formatRupiah(fnbTotal)} />
+          <div className="border-t border-gray-800 pt-2 mt-2">
+            <Row label="Total" value={formatRupiah(grandTotal)} bold />
+          </div>
+          {dpPaid > 0 && <Row label="DP Terbayar" value={`−${formatRupiah(dpPaid)}`} />}
+          <div className="border-t border-gray-800 pt-2">
+            <Row label="Sisa yang Harus Dibayar" value={formatRupiah(remainingAmount)} bold />
+          </div>
+        </div>
+
+        {/* Payment */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-6 space-y-4">
+          <p className="text-xs font-medium text-gray-500 uppercase">Pembayaran</p>
+          <Field label="Metode Pembayaran">
+            <Select
+              value={paymentMethod}
+              onChange={(val) => setPaymentMethod(val as PaymentMethod)}
+              options={PAYMENT_METHODS}
+              placeholder="Pilih Metode Pembayaran"
+            />
+          </Field>
+
+          {paymentMethod === 'cash' && (
+            <>
+              <Field label="Uang yang Diterima (Rp)">
+                <Input
+                  type="number"
+                  value={amountPaid}
+                  onChange={(e) => setAmountPaid(e.target.value)}
+                  placeholder={String(remainingAmount)}
+                />
+              </Field>
+              {paid > 0 && (
+                <div className="bg-gray-800 rounded-lg px-4 py-3 flex justify-between text-sm">
+                  <span className="text-gray-400">Kembalian</span>
+                  <span className="font-bold text-emerald-400">{formatRupiah(change)}</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <Button
+          className="w-full"
+          size="sm"
+          onClick={handleCheckout}
+          loading={saving}
+          disabled={paymentMethod === 'cash' && paid < remainingAmount}
+        >
+          Selesaikan Transaksi
+        </Button>
+      </div>
+    </>
   );
 }
 

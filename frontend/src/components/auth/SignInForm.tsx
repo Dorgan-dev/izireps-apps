@@ -17,7 +17,7 @@ export default function SignInForm() {
 
   // KUNCI PERBAIKAN: Ambil fungsi aksi dari Zustand store kelompok Anda
   // (Sesuaikan nama fungsi 'login' atau 'setAuth' sesuai isi file authStore.ts Anda)
-  const { login } = useAuthStore();
+  const { login, isLoading } = useAuthStore();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +25,7 @@ export default function SignInForm() {
 
     try {
       // 1. Panggil fungsi login dari authStore (otomatis nembak API & update state)
-      await login(email, password);
+      await login(email, password, isChecked);
 
       // 2. Ambil data user terbaru dari store
       const { user } = useAuthStore.getState();
@@ -51,17 +51,17 @@ export default function SignInForm() {
           className="inline-flex items-center text-sm text-gray-500 transition-colors hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
         >
           <ChevronLeftIcon className="size-5" />
-          Back to dashboard
+          Back to landing page
         </Link>
       </div>
       <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign In
+              Login
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign in!
+              Enter your email and password to login!
             </p>
           </div>
           <div>
@@ -91,7 +91,7 @@ export default function SignInForm() {
                     fill="#EB4335"
                   />
                 </svg>
-                Sign in with Google
+                Login with Google
               </button>
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
@@ -104,7 +104,7 @@ export default function SignInForm() {
                 >
                   <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" />
                 </svg>
-                Sign in with X
+                Login with X
               </button>
             </div>
             <div className="relative py-3 sm:py-5">
@@ -120,7 +120,7 @@ export default function SignInForm() {
             <form onSubmit={handleLogin}>
               <div className="space-y-6">
                 {/* Menampilkan pesan error jika login gagal */}
-                {error && <p className="text-sm text-error-500">{error}</p>}
+                {error && <p className="text-sm text-red-500">{error}</p>}
                 <div>
                   <Label>
                     Email <span className="text-error-500">*</span>{" "}
@@ -161,10 +161,13 @@ export default function SignInForm() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Checkbox checked={isChecked} onChange={setIsChecked} />
-                    <span className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400">
+                    <Checkbox id="keep-logged-in" checked={isChecked} onChange={setIsChecked} />
+                    <label
+                      htmlFor="keep-logged-in"
+                      className="block font-normal text-gray-700 text-theme-sm dark:text-gray-400 cursor-pointer select-none"
+                    >
                       Keep me logged in
-                    </span>
+                    </label>
                   </div>
                   <Link
                     to="/reset-password"
@@ -174,8 +177,8 @@ export default function SignInForm() {
                   </Link>
                 </div>
                 <div>
-                  <Button className="w-full" size="sm">
-                    Sign in
+                  <Button className="w-full" size="sm" type="submit" loading={isLoading}>
+                    Login
                   </Button>
                 </div>
               </div>
@@ -185,10 +188,10 @@ export default function SignInForm() {
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Don&apos;t have an account? {""}
                 <Link
-                  to="/signup"
-                  className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
+                  to="/register"
+                  className="text-brand-500 hover:text-brand-600 dark:text-brand-400 font-semibold"
                 >
-                  Sign Up
+                  Register
                 </Link>
               </p>
             </div>

@@ -55,50 +55,51 @@ export function ActiveSessionList() {
       <div className="flex flex-col gap-3">
         {sessions.map(session => {
           const pricePerHour = session.device?.current_rate?.price_per_hour ?? 0
-          const elapsed      = getElapsedMinutes(session.started_at)
-          const gamingEst    = calcGamingCost(elapsed, pricePerHour)
-          const fnbTotal     = session.transaction?.fnb_total ?? 0
-          const dpPaid       = session.transaction?.dp_paid   ?? 0
-          const grandEst     = Math.max(0, gamingEst + fnbTotal - dpPaid)
+          const elapsed = getElapsedMinutes(session.started_at)
+          const gamingEst = calcGamingCost(elapsed, pricePerHour)
+          const fnbTotal = session.transaction?.fnb_total ?? 0
+          const dpPaid = session.transaction?.dp_paid ?? 0
+          const grandEst = Math.max(0, gamingEst + fnbTotal - dpPaid)
 
           return (
-            <div
-              key={session.id}
-              onClick={() => navigate(`/cashier/sessions/${session.id}/checkout`)}
-              className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4
-                cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all"
-            >
-              {/* Indikator status */}
-              <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
+            <>
+              {isLoading ? (<Spinner className="py-16" />) : (
+                <div key={session.id} onClick={() => navigate(`/cashier/sessions/${session.id}/checkout`)}
+                  className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center gap-4
+                cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all">
+                  {/* Indikator status */}
+                  <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
 
-              {/* Info perangkat & pelanggan */}
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-gray-900 text-sm">{session.device?.name ?? '—'}</p>
-                <p className="text-xs text-gray-400 truncate">
-                  {session.customer?.name ?? 'Walk-in'}
-                  {session.booking_id && (
-                    <span className="ml-1 text-blue-400">· Booking #{session.booking_id}</span>
-                  )}
-                </p>
-              </div>
+                  {/* Info perangkat & pelanggan */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 text-sm">{session.device?.name ?? '—'}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {session.customer?.name ?? 'Walk-in'}
+                      {session.booking_id && (
+                        <span className="ml-1 text-blue-400">· Booking #{session.booking_id}</span>
+                      )}
+                    </p>
+                  </div>
 
-              {/* Durasi */}
-              <div className="text-center flex-shrink-0">
-                <p className="text-sm font-medium text-amber-700">
-                  <ElapsedTimer startedAt={session.started_at} />
-                </p>
-                <p className="text-xs text-gray-400">durasi</p>
-              </div>
+                  {/* Durasi */}
+                  <div className="text-center flex-shrink-0">
+                    <p className="text-sm font-medium text-amber-700">
+                      <ElapsedTimer startedAt={session.started_at} />
+                    </p>
+                    <p className="text-xs text-gray-400">durasi</p>
+                  </div>
 
-              {/* Estimasi biaya */}
-              <div className="text-right flex-shrink-0">
-                <p className="text-sm font-medium text-gray-900">{formatRupiah(grandEst)}</p>
-                <p className="text-xs text-gray-400">est. total</p>
-              </div>
+                  {/* Estimasi biaya */}
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-medium text-gray-900">{formatRupiah(grandEst)}</p>
+                    <p className="text-xs text-gray-400">est. total</p>
+                  </div>
 
-              {/* Chevron */}
-              <span className="text-gray-300 flex-shrink-0">›</span>
-            </div>
+                  {/* Chevron */}
+                  <span className="text-gray-300 flex-shrink-0">›</span>
+                </div>
+              )}
+            </>
           )
         })}
       </div>

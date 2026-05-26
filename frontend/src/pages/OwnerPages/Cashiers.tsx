@@ -81,7 +81,7 @@ export default function OwnerCashiers() {
   return (
     <>
       <PageBreadcrumb
-        pageTitle="Kasir"
+      items={[{label: 'Kasir', path: '/owner/cashiers'}]}
         pageDescription="Kelola akun kasir"
       />
 

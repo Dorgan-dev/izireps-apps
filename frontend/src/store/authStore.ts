@@ -8,8 +8,10 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   error: string | null;
+  rememberMe: boolean;
 
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -21,16 +23,38 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       isLoading: false,
       error: null,
+      rememberMe: false,
 
-      login: async (email, password) => {
-        set({ isLoading: true, error: null });
+      login: async (email, password, rememberMe = false) => {
+        set({ isLoading: true, error: null, rememberMe });
         try {
           const res = await authApi.login(email, password);
           const { user, token } = res.data;
-          localStorage.setItem('token', token);
+          if (rememberMe) {
+            localStorage.setItem('token', token);
+            sessionStorage.removeItem('token');
+          } else {
+            sessionStorage.setItem('token', token);
+            localStorage.removeItem('token');
+          }
           set({ user, token, isLoading: false });
         } catch (err: any) {
           const message = err.response?.data?.message ?? 'Login gagal';
+          set({ error: message, isLoading: false });
+          throw err;
+        }
+      },
+
+      register: async (name, email, password) => {
+        set({ isLoading: true, error: null, rememberMe: true });
+        try {
+          const res = await authApi.register(name, email, password);
+          const { user, token } = res.data;
+          localStorage.setItem('token', token);
+          sessionStorage.removeItem('token');
+          set({ user, token, isLoading: false });
+        } catch (err: any) {
+          const message = err.response?.data?.message ?? 'Registrasi gagal';
           set({ error: message, isLoading: false });
           throw err;
         }
@@ -41,7 +65,8 @@ export const useAuthStore = create<AuthState>()(
           await authApi.logout();
         } finally {
           localStorage.removeItem('token');
-          set({ user: null, token: null });
+          sessionStorage.removeItem('token');
+          set({ user: null, token: null, rememberMe: false });
         }
       },
 
@@ -49,7 +74,35 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, token: state.token }),
+      partialize: (state) => ({ user: state.user, token: state.token, rememberMe: state.rememberMe }),
+      storage: {
+        getItem: (name) => {
+          const localStr = localStorage.getItem(name);
+          if (localStr) return JSON.parse(localStr);
+          const sessionStr = sessionStorage.getItem(name);
+          if (sessionStr) return JSON.parse(sessionStr);
+          return null;
+        },
+        setItem: (name, value) => {
+          try {
+            const parsed = JSON.parse(value);
+            const remember = parsed.state?.rememberMe;
+            if (remember) {
+              localStorage.setItem(name, value);
+              sessionStorage.removeItem(name);
+            } else {
+              sessionStorage.setItem(name, value);
+              localStorage.removeItem(name);
+            }
+          } catch (e) {
+            localStorage.setItem(name, value);
+          }
+        },
+        removeItem: (name) => {
+          localStorage.removeItem(name);
+          sessionStorage.removeItem(name);
+        }
+      }
     }
   )
 );

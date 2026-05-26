@@ -1,13 +1,50 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
 import Label from "../form/Label";
 import Input from "../form/input/InputField";
 import Checkbox from "../form/input/Checkbox";
+import Button from "../ui/button/Button";
+import { useAuthStore } from "../../store/authStore";
 
 export default function SignUpForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  
+  const navigate = useNavigate();
+  const { register, isLoading } = useAuthStore();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (!isChecked) {
+      setError("You must agree to the Terms and Conditions.");
+      return;
+    }
+
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+      await register(fullName, email, password);
+
+      const { user } = useAuthStore.getState();
+      if (user?.role === "owner") {
+        navigate("/owner");
+      } else if (user?.role === "cashier") {
+        navigate("/cashier");
+      } else {
+        navigate("/");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
+    }
+  };
+
   return (
     <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar">
       <div className="w-full max-w-md mx-auto mb-5 sm:pt-10">
@@ -23,10 +60,10 @@ export default function SignUpForm() {
         <div>
           <div className="mb-5 sm:mb-8">
             <h1 className="mb-2 font-semibold text-gray-800 text-title-sm dark:text-white/90 sm:text-title-md">
-              Sign Up
+              Register
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Enter your email and password to sign up!
+              Enter your email and password to register!
             </p>
           </div>
           <div>
@@ -56,7 +93,7 @@ export default function SignUpForm() {
                     fill="#EB4335"
                   />
                 </svg>
-                Sign up with Google
+                Register with Google
               </button>
               <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
@@ -69,7 +106,7 @@ export default function SignUpForm() {
                 >
                   <path d="M15.6705 1.875H18.4272L12.4047 8.75833L19.4897 18.125H13.9422L9.59717 12.4442L4.62554 18.125H1.86721L8.30887 10.7625L1.51221 1.875H7.20054L11.128 7.0675L15.6705 1.875ZM14.703 16.475H16.2305L6.37054 3.43833H4.73137L14.703 16.475Z" />
                 </svg>
-                Sign up with X
+                Register with X
               </button>
             </div>
             <div className="relative py-3 sm:py-5">
@@ -82,8 +119,10 @@ export default function SignUpForm() {
                 </span>
               </div>
             </div>
-            <form>
+            <form onSubmit={handleRegister}>
               <div className="space-y-5">
+                {error && <p className="text-sm text-red-500">{error}</p>}
+                
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {/* <!-- First Name --> */}
                   <div className="sm:col-span-1">
@@ -95,6 +134,9 @@ export default function SignUpForm() {
                       id="fname"
                       name="fname"
                       placeholder="Enter your first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
                     />
                   </div>
                   {/* <!-- Last Name --> */}
@@ -107,6 +149,9 @@ export default function SignUpForm() {
                       id="lname"
                       name="lname"
                       placeholder="Enter your last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
                     />
                   </div>
                 </div>
@@ -120,6 +165,9 @@ export default function SignUpForm() {
                     id="email"
                     name="email"
                     placeholder="Enter your email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
                 {/* <!-- Password --> */}
@@ -131,6 +179,9 @@ export default function SignUpForm() {
                     <Input
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
                     />
                     <span
                       onClick={() => setShowPassword(!showPassword)}
@@ -150,8 +201,9 @@ export default function SignUpForm() {
                     className="w-5 h-5"
                     checked={isChecked}
                     onChange={setIsChecked}
+                    id="terms-conditions"
                   />
-                  <p className="inline-block font-normal text-gray-500 dark:text-gray-400">
+                  <label htmlFor="terms-conditions" className="inline-block font-normal text-gray-500 dark:text-gray-400 cursor-pointer select-none">
                     By creating an account means you agree to the{" "}
                     <span className="text-gray-800 dark:text-white/90">
                       Terms and Conditions,
@@ -160,13 +212,13 @@ export default function SignUpForm() {
                     <span className="text-gray-800 dark:text-white">
                       Privacy Policy
                     </span>
-                  </p>
+                  </label>
                 </div>
                 {/* <!-- Button --> */}
                 <div>
-                  <button className="flex items-center justify-center w-full px-4 py-3 text-sm font-medium text-white transition rounded-lg bg-brand-500 shadow-theme-xs hover:bg-brand-600">
-                    Sign Up
-                  </button>
+                  <Button className="w-full" size="md" type="submit" loading={isLoading}>
+                    Register
+                  </Button>
                 </div>
               </div>
             </form>
@@ -175,10 +227,10 @@ export default function SignUpForm() {
               <p className="text-sm font-normal text-center text-gray-700 dark:text-gray-400 sm:text-start">
                 Already have an account? {""}
                 <Link
-                  to="/signin"
+                  to="/login"
                   className="text-brand-500 hover:text-brand-600 dark:text-brand-400"
                 >
-                  Sign In
+                  Login
                 </Link>
               </p>
             </div>

@@ -3,12 +3,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PlaySession, FnbCategory, Device, PaymentMethod } from '../../types'
 import { formatRupiah, formatDuration, getElapsedMinutes, calcGamingCost, sessionStatusLabel, sessionStatusBadge, paymentMethodLabel } from '../../utils'
-import { Button, Modal, Field, Input, Spinner, Badge, EmptyState } from '../../components/common'
+import { Modal, Field, Input, Spinner, Badge, EmptyState } from '../../components/common'
 import Select from '../../components/form/Select'
 import { sessionApi, deviceApi, fnbApi } from '../../api'
 import toast from 'react-hot-toast'
 import { ActiveSessionList } from './ActiveSessionList'
 import PageBreadcrumb from '../../components/common/PageBreadCrumb'
+import ComponentCard from '../../components/common/ComponentCard'
+import Button from '../../components/ui/button/Button'
 
 // ─── Timer ───────────────────────────────────────────────────────────────────
 function ElapsedTimer({ startedAt }: { startedAt: string }) {
@@ -98,7 +100,6 @@ function NewSessionModal({ onClose }: { onClose: () => void }) {
       navigate(`/cashier`) // Back to dashboard or keep it here since it auto updates
     },
   })
-
   return (
     <>
       <div className="flex flex-col gap-5">
@@ -481,92 +482,75 @@ export function PlaySessionsPage() {
   const actives = all.filter(s => s.status === 'active')
 
   return (
-    <><PageBreadcrumb pageTitle='Play session' pageDescription='Pelanggan yang sedang bermain akan tercatat dalam sesi' />
-      <div className="flex flex-col gap-5">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg font-medium text-gray-900">Play Sessions</h1>
-            <p className="text-sm text-gray-400">
-              {all.length} sesi berjalan
-              {timeUps.length > 0 && (
-                <span className="ml-2 text-red-500 font-medium">· {timeUps.length} waktu habis</span>
-              )}
-            </p>
-          </div>
-          <Button variant="primary" onClick={() => setShowNew(true)}>
-            + Sesi baru
-          </Button>
-        </div>
-        <ActiveSessionList />
-
-        {/* Alert time_up */}
-        {timeUps.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
-            <span>🔴</span>
-            <span>
-              <strong>{timeUps.length} sesi</strong> waktunya sudah habis dan menunggu tindakan.
-              Segera extend atau checkout.
-            </span>
-          </div>
-        )}
-
-        {/* List sesi */}
-        {isLoading ? (
-          <Spinner className="py-16" />
-        ) : !all.length ? (
-          <EmptyState
-            icon="🎮"
-            title="Tidak ada sesi aktif"
-            description='Klik "Sesi baru" untuk memulai sesi walk-in'
-          />
-        ) : (
-          <div className="flex flex-col gap-4">
-            {/* time_up duluan */}
-            {timeUps.length > 0 && (
-              <div className="flex flex-col gap-3">
-                <p className="text-xs font-medium text-red-500 uppercase tracking-wide">Waktu Habis</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {timeUps.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
-                </div>
-              </div>
-            )}
-            {/* Sesi aktif */}
-            {actives.length > 0 && (
-              <div className="flex flex-col gap-3">
-                {timeUps.length > 0 && (
-                  <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Sedang Bermain</p>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {actives.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Modal sesi baru */}
-        <Modal
-          open={showNew}
-          onClose={() => setShowNew(false)}
-          title="Sesi baru — Walk-in"
-          maxWidth="max-w-lg"
-        >
-          <NewSessionModal onClose={() => setShowNew(false)} />
-        </Modal>
-
-        {/* Modal tambah F&B */}
-        <Modal
-          open={!!fnbSession}
-          onClose={() => setFnbSession(null)}
-          title="Tambah F&B"
-          maxWidth="max-w-md"
-        >
-          {fnbSession && (
-            <AddFnbModal session={fnbSession} onClose={() => setFnbSession(null)} />
+    <><PageBreadcrumb items={[{ label: 'Sesi bermain', path: '/cashier/sessions' }]} pageDescription='Pelanggan yang sedang bermain akan tercatat dalam sesi' />
+      <ComponentCard title='Daftar sesi aktif' headerAction={
+        <Button size='sm' variant="primary" onClick={() => setShowNew(true)}>
+          + Sesi baru
+        </Button>
+      }>
+        <div className="flex flex-col gap-5">
+          <ActiveSessionList />
+          {/* Alert time_up */}
+          {timeUps.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+              <span>🔴</span>
+              <span>
+                <strong>{timeUps.length} sesi</strong> waktunya sudah habis dan menunggu tindakan.
+                Segera extend atau checkout.
+              </span>
+            </div>
           )}
-        </Modal>
-      </div></>
+
+          {/* List sesi */}
+          {isLoading ? (<Spinner className="py-16" />) : (
+            <div className="flex flex-col gap-4">
+              {/* time_up duluan */}
+              {timeUps.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs font-medium text-red-500 uppercase tracking-wide">Waktu Habis</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {timeUps.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
+                  </div>
+                </div>
+              )}
+              {/* Sesi aktif */}
+              {actives.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  {timeUps.length > 0 && (
+                    <p className="text-xs font-medium text-amber-600 uppercase tracking-wide">Sedang Bermain</p>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {actives.map(s => <SessionCard key={s.id} session={s} onAddFnb={setFnbSession} />)}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Modal sesi baru */}
+          <Modal
+            open={showNew}
+            onClose={() => setShowNew(false)}
+            title="Sesi baru — Walk-in"
+            maxWidth="max-w-lg"
+          >
+            <NewSessionModal onClose={() => setShowNew(false)} />
+          </Modal>
+
+          {/* Modal tambah F&B */}
+          <Modal
+            open={!!fnbSession}
+            onClose={() => setFnbSession(null)}
+            title="Tambah F&B"
+            maxWidth="max-w-md"
+          >
+            {fnbSession && (
+              <AddFnbModal session={fnbSession} onClose={() => setFnbSession(null)} />
+            )}
+          </Modal>
+        </div>
+      </ComponentCard>
+    </>
   )
 }
 

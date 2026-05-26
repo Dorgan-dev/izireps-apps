@@ -3,8 +3,8 @@ import { lazy, Suspense } from 'react';
 import { RequireAuth, RequireRole } from './guards';
 import { useAuthStore } from '../store/authStore';
 import PageLoader from '../components/ui/PageLoader';
-// import { ActiveSessionList } from '../pages/CashierPages/ActiveSessionList';
 import PlaySessionsPage from '../pages/CashierPages/SessionPanel';
+
 const LandingPage = lazy(() => import('../pages/PublicPages/LandingPage'));
 const CustomerLandingPage = lazy(() => import('../pages/CustomerLandingPage'));
 const SignInPage = lazy(() => import('../pages/AuthPages/SignIn'));
@@ -32,10 +32,6 @@ function S({ children }: { children: React.ReactNode }) {
 }
 
 function RootPage() {
-  const { user, token } = useAuthStore();
-  if (user && token) {
-    return <Navigate to={user.role === 'owner' ? '/owner' : '/cashier'} replace />;
-  }
   return <S><LandingPage /></S>;
 }
 

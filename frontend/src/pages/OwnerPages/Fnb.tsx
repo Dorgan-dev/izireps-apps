@@ -64,7 +64,12 @@ export default function OwnerFnb() {
   };
 
   return (
-    <><PageBreadcrumb pageTitle="Jajanan" pageDescription="Kelola makanan dan minuman yang tersedia" />
+    <><PageBreadcrumb items={[
+      {
+        label: 'Jajanan',
+        path: '/owner/fnb'
+      }
+    ]} pageDescription="Kelola makanan dan minuman yang tersedia" />
       <div className='gap-4 lg:flex items-start'>
         <ComponentCard className="lg:w-1/5 sm:w-1/3" title="Daftar Kategori" headerAction={
           <Button size="sm" onClick={() => { setCatForm({ name: '' }); setSelCat(null); setCatModal('add'); }}><Plus size={20} /></Button>}>

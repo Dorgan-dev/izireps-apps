@@ -8,13 +8,15 @@ import LandingFooter from '../../components/landing/LandingFooter';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
+    <div className="min-h-screen bg-white font-outfit text-gray-900 dark:bg-gray-900 dark:text-white">
       <LandingNavbar />
-      <LandingHero />
-      <LandingFeatures />
-      <LandingWorkflow />
-      <LandingRoles />
-      <LandingCTA />
+      <main>
+        <LandingHero />
+        <LandingFeatures />
+        <LandingWorkflow />
+        <LandingRoles />
+        <LandingCTA />
+      </main>
       <LandingFooter />
     </div>
   );

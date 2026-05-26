@@ -51,6 +51,7 @@ Route::prefix('public')->group(function () {
 // AUTH
 // ═══════════════════════════════════════════════════════════════
 Route::post('auth/login', [AuthController::class, 'login']);
+Route::post('auth/register', [AuthController::class, 'register']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);

@@ -6,7 +6,7 @@ const api = axios.create({
 })
 
 api.interceptors.request.use(cfg => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (token) cfg.headers.Authorization = `Bearer ${token}`
   return cfg
 })
@@ -16,6 +16,7 @@ api.interceptors.response.use(
   err => {
     if (err.response?.status === 401) {
       localStorage.removeItem('token')
+      sessionStorage.removeItem('token')
       localStorage.removeItem('user')
       window.location.href = '/login'
     }

@@ -24,6 +24,11 @@ export const authApi = {
     return api.post<LoginResponse>('/auth/login', { email, password });
   },
 
+  register: async (name: string, email: string, password: string) => {
+    await api.get('../sanctum/csrf-cookie');
+    return api.post<LoginResponse>('/auth/register', { name, email, password });
+  },
+
   logout: () => api.post('/auth/logout'),
   me: () => api.get<ApiResponse<User>>('/auth/me'),
 };

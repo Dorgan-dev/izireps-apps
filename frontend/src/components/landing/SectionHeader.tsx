@@ -1,9 +1,25 @@
-export default function SectionHeader({ label, title, sub }: { label: string; title: string; sub?: string }) {
+export default function SectionHeader({
+  label,
+  title,
+  sub,
+}: {
+  label: string;
+  title: string;
+  sub?: string;
+}) {
   return (
-    <div className="text-center mb-10">
-      <p className="text-xs font-medium text-emerald-400 uppercase tracking-widest mb-2">{label}</p>
-      <h2 className="text-2xl font-bold text-white mb-3">{title}</h2>
-      {sub && <p className="text-gray-400 text-sm max-w-md mx-auto leading-relaxed">{sub}</p>}
+    <div className="mb-10 text-center">
+      <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
+        {label}
+      </p>
+      <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+        {title}
+      </h2>
+      {sub && (
+        <p className="mx-auto max-w-lg text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+          {sub}
+        </p>
+      )}
     </div>
   );
 }

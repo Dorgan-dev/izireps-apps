@@ -71,7 +71,12 @@ export default function Devices() {
 
   return (
     <>
-      <PageBreadcrumb pageTitle="Perangkat" pageDescription="Kelola perangkat beserta tarifnya" />
+      <PageBreadcrumb items={[
+        {
+          label: 'Perangkat',
+          path: '/owner/devices'
+        }
+      ]} pageDescription="Kelola perangkat beserta tarifnya" />
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
