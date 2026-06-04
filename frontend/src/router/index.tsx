@@ -3,61 +3,82 @@ import { lazy, Suspense } from 'react';
 import { RequireAuth, RequireRole } from './guards';
 import { useAuthStore } from '../store/authStore';
 import PageLoader from '../components/ui/PageLoader';
-import PlaySessionsPage from '../pages/CashierPages/SessionPanel';
 
-const LandingPage = lazy(() => import('../pages/PublicPages/LandingPage'));
-const CustomerLandingPage = lazy(() => import('../pages/CustomerLandingPage'));
-const SignInPage = lazy(() => import('../pages/AuthPages/SignIn'));
-const SignUpPage = lazy(() => import('../pages/AuthPages/SignUp'));
-const OwnerLayout = lazy(() => import('../layouts/owner/OwnerLayout'));
-const OwnerDashboard = lazy(() => import('../pages/OwnerPages/Dashboard'));
-const OwnerDevices = lazy(() => import('../pages/OwnerPages/Devices'));
-const OwnerDeviceRates = lazy(() => import('../pages/OwnerPages/DeviceRates'));
-const OwnerCashiers = lazy(() => import('../pages/OwnerPages/Cashiers'));
-const OwnerBookings = lazy(() => import('../pages/OwnerPages/Bookings'));
-const OwnerFnb = lazy(() => import('../pages/OwnerPages/Fnb'));
-const OwnerReports = lazy(() => import('../pages/OwnerPages/Reports'));
-const CashierLayout = lazy(() => import('../layouts/cashier/CashierLayout'));
-const CashierDashboard = lazy(() => import('../pages/CashierPages/Dashboard'));
-const CashierBookings = lazy(() => import('../pages/CashierPages/Bookings'));
-const CashierSessions = lazy(() => import('../pages/CashierPages/SessionPanel'));
-const CashierCheckout = lazy(() => import('../pages/CashierPages/Checkout'));
-const CashierFnb = lazy(() => import('../pages/CashierPages/FnbManager'));
-const CashierTransactions = lazy(() => import('../pages/CashierPages/TransactionList'));
-const CashierDevices = lazy(() => import('../pages/CashierPages/DeviceGrid'));
-const NotFound = lazy(() => import('../pages/NotFound'));
+const PublicLayout        = lazy(() => import('../layouts/public/PublicLayout'));
+const PublicLanding       = lazy(() => import('../pages/PublicPages/LandingPage'));
+const PublicLogin         = lazy(() => import('../pages/AuthPages/Login'));
+const PublicRegister      = lazy(() => import('../pages/AuthPages/Register'));
+const PublicAbout         = lazy(() => import('../pages/PublicPages/About'));
+const PublicContact       = lazy(() => import('../pages/PublicPages/Contact'));
+const PublicDeviceList    = lazy(() => import('../pages/PublicPages/DeviceList'));
+const PublicDeviceDetail  = lazy(() => import('../pages/PublicPages/DeviceDetail'));
+
+const OwnerLayout         = lazy(() => import('../layouts/owner/OwnerLayout'));
+const OwnerDashboard      = lazy(() => import('../pages/OwnerPages/Dashboard'));
+const OwnerDevices        = lazy(() => import('../pages/OwnerPages/Devices'));
+const OwnerDeviceRates    = lazy(() => import('../pages/OwnerPages/DeviceRates'));
+const OwnerCashiers       = lazy(() => import('../pages/OwnerPages/Cashiers'));
+const OwnerBookings       = lazy(() => import('../pages/OwnerPages/Bookings'));
+const OwnerFnb            = lazy(() => import('../pages/OwnerPages/Fnb'));
+const OwnerReports        = lazy(() => import('../pages/OwnerPages/Reports'));
+
+const CashierLayout       = lazy(() => import('../layouts/cashier/CashierLayout'));
+const CashierDashboard    = lazy(() => import('../pages/CashierPages/Dashboard'));
+const CashierBookings     = lazy(() => import('../pages/CashierPages/Bookings'));
+const CashierSessions     = lazy(() => import('../pages/CashierPages/Sessions'));
+const CashierCheckout     = lazy(() => import('../pages/CashierPages/SessionDetail'));
+const CashierFnb          = lazy(() => import('../pages/CashierPages/Fnb'));
+const CashierTransactions = lazy(() => import('../pages/CashierPages/Transactions'));
+const CashierDevices      = lazy(() => import('../pages/CashierPages/Devices'));
+
+const NotFound            = lazy(() => import('../pages/NotFound'));
 
 function S({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
 }
 
-function RootPage() {
-  return <S><LandingPage /></S>;
+/** Helper: tentukan halaman tujuan sesuai role */
+function dashboardPath(role?: string): string {
+  if (role === 'owner') return '/owner';
+  if (role === 'cashier') return '/cashier';
+  return '/'; // customer & lainnya ke landing page
 }
 
 function LoginRoute() {
   const { user, token } = useAuthStore();
+  // Redirect jika sudah login
   if (user && token) {
-    return <Navigate to={user.role === 'owner' ? '/owner' : '/cashier'} replace />;
+    return <Navigate to={dashboardPath(user.role)} replace />;
   }
-  return <S><SignInPage /></S>;
+  return <S><PublicLogin /></S>;
 }
 
 function RegisterRoute() {
-  const { user, token } = useAuthStore();
-  if (user && token) {
-    return <Navigate to={user.role === 'owner' ? '/owner' : '/cashier'} replace />;
-  }
-  return <S><SignUpPage /></S>;
+  // Tidak redirect user yang sudah login — customer perlu akses
+  // halaman ini bahkan jika sudah punya token (untuk banner already_registered)
+  return <S><PublicRegister /></S>;
 }
 
 const router = createBrowserRouter([
-  { path: '/', element: <RootPage /> },
-  { path: '/booking', element: <S><CustomerLandingPage /></S> },
   { path: '/login', element: <LoginRoute /> },
   { path: '/register', element: <RegisterRoute /> },
   // { path: '/forgot-password', element: <ForgotPasswordPage /> },
-
+  {
+    children: [
+      {
+        path: '/',
+        element: <S><PublicLayout /></S>,
+        children: [
+          { index: true, element: <S><PublicLanding /></S> },
+          { path: 'about', element: <S><PublicAbout /></S> },
+          { path: 'contact', element: <S><PublicContact /></S> },
+          { path: 'device', element: <S><PublicDeviceList /></S> },
+          { path: 'device/detail/:id', element: <S><PublicDeviceDetail /></S> },
+          // { path: '/booking', element: <S><CustomerLandingPage /></S> },
+        ],
+      }
+    ]
+  },
   {
     element: <RequireAuth />,
     children: [
@@ -89,7 +110,7 @@ const router = createBrowserRouter([
             children: [
               { index: true, element: <S><CashierDashboard /></S> },
               { path: 'bookings', element: <S><CashierBookings /></S> },
-              { path: 'sessions', element: <S><PlaySessionsPage /></S> },
+              { path: 'sessions', element: <S><CashierSessions /></S> },
               { path: 'sessions/:id', element: <S><CashierSessions /></S> },
               { path: 'sessions/:id/checkout', element: <S><CashierCheckout /></S> },
               { path: 'transactions', element: <S><CashierTransactions /></S> },

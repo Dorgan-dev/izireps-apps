@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
-use App\Models\Session;
+use App\Models\PlaySession;
 use App\Models\Booking;
 use App\Models\Device;
 use Illuminate\Http\Request;
@@ -46,11 +46,11 @@ class ReportController extends Controller
             ->sum('fnb_total');
 
         // Total sesi dalam rentang
-        $totalSessions = Session::whereBetween(DB::raw('DATE(started_at)'), [$from, $to])
+        $totalSessions = PlaySession::whereBetween(DB::raw('DATE(started_at)'), [$from, $to])
             ->count();
 
         // Sesi hari ini
-        $sessionsToday = Session::whereDate('started_at', $today)->count();
+        $sessionsToday = PlaySession::whereDate('started_at', $today)->count();
 
         // Total booking dalam rentang
         $totalBookings = Booking::whereBetween(DB::raw('DATE(booking_date)'), [$from, $to])
@@ -132,7 +132,7 @@ class ReportController extends Controller
             'to'   => 'required|date|after_or_equal:from',
         ]);
 
-        $rows = Session::select(
+        $rows = PlaySession::select(
                 'device_id',
                 DB::raw('COUNT(*) as total_sessions'),
                 DB::raw('SUM(duration_minutes) as total_minutes'),

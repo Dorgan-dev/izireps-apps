@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router-dom';
-import { Gamepad2, Globe, MessageCircle, Phone } from 'lucide-react';
+import { Gamepad2, Globe } from 'lucide-react';
+import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 
 const FOOTER_LINKS = {
   Navigasi: [
@@ -15,17 +15,18 @@ const FOOTER_LINKS = {
   ],
 };
 
+const phoneNumber = "628988182167";
+const message = encodeURIComponent("Halo iZiReps, saya mau tanya tentang booking PS.");
+
 const SOCIAL = [
-  { icon: Globe, label: 'Website', href: '#' },
-  { icon: MessageCircle, label: 'WhatsApp', href: '#' },
-  { icon: Phone, label: 'Telepon', href: '#' },
+  { icon: Globe, label: 'Website', href: '/' },
+  { icon: FaWhatsapp, label: 'WhatsApp', href: `https://wa.me/${phoneNumber}?text=${message}` },
+  { icon: FaInstagram, label: 'Telepon', href: 'https://www.instagram.com/izi.playstation/' },
 ];
 
 export default function LandingFooter() {
-  const navigate = useNavigate();
-
   return (
-    <footer className="border-t border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+    <footer className="border-t border-gray-200 bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
       {/* Main footer content */}
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
@@ -81,17 +82,11 @@ export default function LandingFooter() {
       </div>
 
       {/* Bottom bar */}
-      <div className="border-t border-gray-100 dark:border-gray-800">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 sm:flex-row sm:px-6 lg:px-8">
+      <div className="border-t border-gray-200 dark:border-gray-800">
+        <div className="mx-auto flex max-w-7xl items-center justify-center gap-3 px-4 py-4 sm:px-6 lg:px-8">
           <p className="text-xs text-gray-400 dark:text-gray-500">
             © {new Date().getFullYear()} iZiReps. Hak cipta dilindungi.
           </p>
-          <button
-            onClick={() => navigate('/login')}
-            className="text-xs text-gray-400 transition-colors hover:text-brand-500 dark:text-gray-500 dark:hover:text-brand-400"
-          >
-            Login sebagai Staf →
-          </button>
         </div>
       </div>
     </footer>

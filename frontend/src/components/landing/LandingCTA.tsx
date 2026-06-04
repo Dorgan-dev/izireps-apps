@@ -1,10 +1,8 @@
-import { useNavigate } from 'react-router-dom';
 import { REVIEWS } from './data';
 import SectionHeader from './SectionHeader';
-import { Star, CalendarCheck, LogIn } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 export default function LandingCTA() {
-  const navigate = useNavigate();
 
   return (
     <>
@@ -64,39 +62,6 @@ export default function LandingCTA() {
         </div>
       </section>
 
-      {/* ── CTA Section ── */}
-      <section className="bg-gray-50 py-16 dark:bg-gray-950 sm:py-20">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-theme-sm dark:border-gray-800 dark:bg-gray-900 sm:p-12">
-            <span className="mb-4 inline-block rounded-full border border-brand-200 bg-brand-50 px-4 py-1.5 text-xs font-medium text-brand-600 dark:border-brand-900 dark:bg-brand-950 dark:text-brand-400">
-              Siap mulai?
-            </span>
-            <h2 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
-              Mulai booking sesi gaming sekarang
-            </h2>
-            <p className="mb-8 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-              Pesan unitmu secara online, bayar DP, dan tinggal datang bermain.
-              Tidak perlu antri panjang lagi.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <button
-                onClick={() => navigate('/booking')}
-                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-6 py-3 text-sm font-medium text-white shadow-theme-sm transition-colors hover:bg-brand-600"
-              >
-                <CalendarCheck size={16} />
-                Mulai Booking
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-6 py-3 text-sm font-medium text-gray-700 shadow-theme-xs transition-colors hover:bg-gray-100 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.07]"
-              >
-                <LogIn size={16} />
-                Login Staf
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
     </>
   );
 }

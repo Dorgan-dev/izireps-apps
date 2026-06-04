@@ -16,17 +16,23 @@ use Illuminate\Console\Command;
 
 class AutoCancelNoShowBookings extends Command
 {
-    protected $signature   = 'bookings:auto-cancel-noshow';
+    protected $signature = 'bookings:auto-cancel-noshow';
     protected $description = 'Batalkan otomatis booking no-show setelah 20 menit dari jam bermain';
 
     public function handle(BookingService $service): void
     {
-        // Batas waktu: jam booking + 15 menit keterlambatan + 5 menit grace period = 20 menit
-        $cutoff = now()->subMinutes(20);
+        // 1. Tentukan waktu sekarang (Pastikan timezone di .env sudah Asia/Jakarta)
+        $now = now();
 
-        $noShows = Booking::where('status', 'confirmed')
+        // 2. Hitung waktu mundur (Batas toleransi maksimal 20 menit yang lalu)
+        // Contoh: Jika sekarang jam 14:25, maka cutoff-nya adalah jam 14:05.
+        // Semua booking jam 14:00 (<= 14:05) dinyatakan hangus/no-show.
+        $cutoffTime = $now->subMinutes(20)->format('H:i:s');
+
+        // 3. Ambil data dengan query standar Eloquent (lebih aman daripada whereRaw kompleks)
+        $noShows = \App\Models\Booking::where('status', 'confirmed')
             ->whereDate('booking_date', today())
-            ->whereRaw("ADDTIME(start_time, '00:20:00') <= ?", [now()->format('H:i:s')])
+            ->where('start_time', '<=', $cutoffTime)
             ->get();
 
         foreach ($noShows as $booking) {

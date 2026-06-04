@@ -18,10 +18,11 @@ export function GuestOnly() {
   return <Outlet />;
 }
 
-// Restrict by role
+// Restrict by role — customer diarahkan ke landing page
 export function RequireRole({ role }: { role: UserRole }) {
   const { user } = useAuthStore();
   if (!user) return <Navigate to="/login" replace />;
+  if (user.role === 'customer') return <Navigate to="/" replace />;
   if (user.role !== role) {
     return <Navigate to={user.role === 'owner' ? '/owner' : '/cashier'} replace />;
   }

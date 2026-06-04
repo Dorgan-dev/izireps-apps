@@ -4,11 +4,11 @@ export type BookingStatus = 'pending' | 'confirmed' | 'in_use' | 'completed' | '
 export type TransactionStatus = 'pending' | 'paid' | 'cancelled'
 export type PaymentMethod = 'cash' | 'qris' | 'transfer'
 export type SessionType = 'per_jam' | 'bebas'
-export type UserRole = 'owner' | 'cashier'
+export type UserRole = 'owner' | 'cashier' | 'customer'
 
 export interface ApiResponse<T> { data: T }
 export interface LoginResponse { user: AuthUser; token: string }
-export interface AuthUser { id: number; name: string; email: string; role: UserRole }
+export interface AuthUser { id: number; name: string; email: string; role: UserRole; phone?: string | null; role_label?: string, avatar?: string | null }
 export interface FnbCategory { id: number; name: string; is_active: boolean; items?: FnbItem[] }
 export interface Customer { id: number; name: string; phone: string | null; email: string | null }
 export interface User { id: number; name: string; email: string; role: UserRole; is_active: boolean }

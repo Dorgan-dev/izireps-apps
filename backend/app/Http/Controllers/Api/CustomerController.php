@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 class CustomerController extends Controller
 {
     /**
-     * POST /api/public/customers/register
+     * POST /api/public/customer-auth/register
      * Publik — pelanggan mendaftarkan diri sebelum booking
      */
     public function register(RegisterCustomerRequest $request): JsonResponse

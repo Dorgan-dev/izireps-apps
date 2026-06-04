@@ -3,9 +3,9 @@ import axios from 'axios';
 /**
  * Axios instance terpusat untuk IZIREPS API.
  *
- * - baseURL '/api' akan di-proxy oleh Vite ke http://localhost:8000/api
- *   sehingga tidak ada masalah CORS saat development.
- * - Interceptor otomatis menyisipkan Bearer Token dari localStorage.
+ * - baseURL 'http://localhost:8000/api/' di-proxy Vite ke backend.
+ * - Interceptor membaca token dari zustand persist storage ('auth-storage')
+ *   sehingga satu sumber kebenaran — tidak ada key 'token' terpisah.
  */
 const api = axios.create({
   baseURL: 'http://localhost:8000/api/',
@@ -13,14 +13,30 @@ const api = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  withCredentials: true, // Diperlukan untuk Laravel Sanctum cookie-based auth
 });
 
+/**
+ * Baca token dari zustand persist storage.
+ * Zustand menyimpan { state: { user, token, rememberMe }, version } di key 'auth-storage'.
+ * Bergantung pada rememberMe, data ada di localStorage atau sessionStorage.
+ */
+function getStoredToken(): string | null {
+  try {
+    const raw =
+      localStorage.getItem('auth-storage') ||
+      sessionStorage.getItem('auth-storage');
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return (parsed?.state?.token as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Request Interceptor ──────────────────────────────────────────────────────
-// Tambahkan Authorization header jika token tersedia di localStorage atau sessionStorage
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = getStoredToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -30,14 +46,13 @@ api.interceptors.request.use(
 );
 
 // ── Response Interceptor ─────────────────────────────────────────────────────
-// Handle error 401 (Unauthenticated) → hapus token dan redirect ke login
+// Handle 401 → bersihkan SEMUA auth storage dan redirect ke login
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-      // Redirect ke halaman login jika bukan sudah di sana
+      localStorage.removeItem('auth-storage');
+      sessionStorage.removeItem('auth-storage');
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }
@@ -47,4 +62,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-

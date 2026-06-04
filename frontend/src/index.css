@@ -790,3 +790,62 @@ span.flatpickr-weekday,
 .simplebar-scrollbar.simplebar-visible:before {
   @apply opacity-100;
 }
+
+html {
+  overflow-y: scroll; 
+}
+
+
+
+/* =========================================
+   CUSTOM SCROLLBAR (Chrome, Edge, Safari)
+   ========================================= */
+
+/* 1. Mengatur lebar scrollbar keseluruhan */
+::-webkit-scrollbar {
+    width: 8px; /* Buat lebih tipis dari bawaan (biasanya 15px) */
+    height: 8px; /* Untuk scrollbar horizontal jika ada */
+}
+
+/* 2. Mengatur jalur (track) di belakang scrollbar */
+::-webkit-scrollbar-track {
+    background: transparent; /* Atau gunakan warna terang seperti #f1f1f1 */
+}
+
+/* 3. Mengatur pegangan (thumb) scrollbar yang bisa ditarik */
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1; /* Warna abu-abu yang elegan */
+    border-radius: 10px; /* Membuat ujungnya membulat */
+}
+
+/* 4. Efek saat scrollbar disorot/hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8; /* Warna menjadi sedikit lebih gelap */
+}
+
+/* =========================================
+   CUSTOM SCROLLBAR (Firefox)
+   ========================================= */
+/* Firefox menggunakan standar CSS yang berbeda */
+html {
+    scrollbar-width: thin; /* Pilihan: auto, thin, none */
+    scrollbar-color: #c1c1c1 transparent; /* thumb-color track-color */
+}
+
+/* =========================================
+   CLOCK TIME PICKER ANIMATION
+   ========================================= */
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) scale(0.95) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) scale(1) translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeInScale 0.18s ease-out forwards;
+}

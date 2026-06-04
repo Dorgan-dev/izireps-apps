@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SessionController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\CustomerAuthController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,9 +39,6 @@ Route::prefix('public')->group(function () {
     Route::get('devices', [DeviceController::class, 'publicIndex']);
     Route::get('devices/{device}/schedule', [DeviceController::class, 'schedule']);
 
-    // Pelanggan — register identitas sebelum booking
-    Route::post('customers/register', [CustomerController::class, 'register']);
-
     // Booking
     Route::post('bookings', [BookingController::class, 'store']);
     Route::get('bookings/{booking}', [BookingController::class, 'showPublic']);
@@ -48,15 +46,25 @@ Route::prefix('public')->group(function () {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// AUTH
+// AUTH UNIFIED — satu endpoint untuk semua role (owner, kasir, pelanggan)
 // ═══════════════════════════════════════════════════════════════
-Route::post('auth/login', [AuthController::class, 'login']);
-Route::post('auth/register', [AuthController::class, 'register']);
 
-Route::middleware('auth:sanctum')->group(function () {
+// Email/password login — cek users tabel dulu, fallback ke customers
+Route::post('login', [AuthController::class, 'unifiedLogin']);
+
+// Google OAuth — unified (from_register=false: login only, from_register=true: register jika belum ada)
+Route::post('auth/google', [AuthController::class, 'handleGoogleCallback']);
+
+// Customer register via email/password (masih terpisah karena hanya boleh untuk customer)
+Route::post('customer-auth/register', [CustomerAuthController::class, 'register']);
+
+// Protected endpoints — berlaku untuk SEMUA token (user internal & customer)
+// Sanctum akan mencocokkan token dari personal_access_tokens tanpa peduli model-nya
+Route::middleware('auth:sanctum,customer')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
-    Route::get('auth/me', [AuthController::class, 'me']);
+    Route::get('auth/me',     [AuthController::class, 'me']);
 });
+
 
 // ═══════════════════════════════════════════════════════════════
 // AUTHENTICATED — owner & kasir
@@ -70,7 +78,7 @@ Route::middleware(['auth:sanctum', 'role:owner,cashier'])->group(function () {
 
     // Hanya kasir yang ubah status manual (available ↔ maintenance)
     Route::patch('devices/{device}/status', [DeviceController::class, 'updateStatus'])
-         ->middleware('role:owner,cashier');
+        ->middleware('role:owner,cashier');
 
     // ── Sesi bermain ──────────────────────────────────────────
     Route::get('sessions', [SessionController::class, 'index']);
@@ -103,7 +111,7 @@ Route::middleware(['auth:sanctum', 'role:cashier,owner'])->group(function () {
 
     // Sesi bermain
     Route::post('sessions/start-walkin', [SessionController::class, 'startWalkIn']);
-    Route::post('sessions/start-booking', [SessionController::class, 'startFromBooking']);
+    Route::post('sessions/start-booking/{booking}', [SessionController::class, 'startFromBooking']);
     Route::post('sessions/{session}/add-fnb', [SessionController::class, 'addFnb']);
     Route::post('sessions/{session}/extend', [SessionController::class, 'extend']);
     Route::post('sessions/{session}/checkout', [SessionController::class, 'checkout']);

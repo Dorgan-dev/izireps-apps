@@ -27,25 +27,29 @@ class TransactionController extends Controller
         $user = $request->user();
 
         $transactions = Transaction::with([
-                'session.device:id,name,ps_type',
-                'session.customer:id,name,phone',
-                'cashier:id,name',
-            ])
+            'session.device:id,name,ps_type',
+            'session.customer:id,name,phone',
+            'cashier:id,name',
+        ])
             ->when(
                 $user->role === 'cashier',
-                fn ($q) => $q->where('cashier_id', $user->id)
+                fn($q) => $q->where('cashier_id', $user->id)
             )
-            ->when($request->filled('date'),
-                fn ($q) => $q->whereDate('paid_at', $request->date)
+            ->when(
+                $request->filled('date'),
+                fn($q) => $q->whereDate('paid_at', $request->date)
             )
-            ->when($request->filled('from'),
-                fn ($q) => $q->whereDate('paid_at', '>=', $request->from)
+            ->when(
+                $request->filled('from'),
+                fn($q) => $q->whereDate('paid_at', '>=', $request->from)
             )
-            ->when($request->filled('to'),
-                fn ($q) => $q->whereDate('paid_at', '<=', $request->to)
+            ->when(
+                $request->filled('to'),
+                fn($q) => $q->whereDate('paid_at', '<=', $request->to)
             )
-            ->when($request->filled('status'),
-                fn ($q) => $q->where('status', $request->status)
+            ->when(
+                $request->filled('status'),
+                fn($q) => $q->where('status', $request->status)
             )
             ->latest()
             ->paginate($request->integer('per_page', 20));
@@ -90,40 +94,40 @@ class TransactionController extends Controller
         return response()->json([
             'data' => [
                 // Header struk
-                'invoice_number'   => $transaction->invoice_number,
-                'paid_at'          => $transaction->paid_at,
+                'invoice_number' => $transaction->invoice_number,
+                'paid_at' => $transaction->paid_at,
 
                 // Perangkat & sesi
-                'device_name'      => $session->device?->name ?? '-',
-                'ps_type'          => $session->device?->ps_type ?? '-',
-                'started_at'       => $session->started_at,
-                'ended_at'         => $session->ended_at,
+                'device_name' => $session->device?->name ?? '-',
+                'ps_type' => $session->device?->ps_type ?? '-',
+                'started_at' => $session->started_at,
+                'ended_at' => $session->ended_at,
                 'duration_minutes' => $session->duration_minutes,
 
                 // Pelanggan
-                'customer_name'    => $session->customer?->name ?? 'Umum',
-                'customer_phone'   => $session->customer?->phone ?? '-',
+                'customer_name' => $session->customer?->name ?? 'Umum',
+                'customer_phone' => $session->customer?->phone ?? '-',
 
                 // Kasir
-                'cashier_name'     => $transaction->cashier?->name ?? '-',
+                'cashier_name' => $transaction->cashier?->name ?? '-',
 
                 // Item FnB
-                'fnb_items'        => $transaction->items->map(fn ($i) => [
-                    'name'       => $i->item_name,
-                    'quantity'   => $i->quantity,
+                'fnb_items' => $transaction->items->map(fn($i) => [
+                    'name' => $i->item_name,
+                    'quantity' => $i->quantity,
                     'unit_price' => $i->unit_price,
-                    'subtotal'   => $i->subtotal,
+                    'subtotal' => $i->subtotal,
                 ]),
 
                 // Rincian biaya
-                'gaming_total'     => $transaction->gaming_total,
-                'fnb_total'        => $transaction->fnb_total,
-                'grand_total'      => $transaction->grand_total,
-                'dp_paid'          => $transaction->dp_paid,
+                'gaming_total' => $transaction->gaming_total,
+                'fnb_total' => $transaction->fnb_total,
+                'grand_total' => $transaction->grand_total,
+                'dp_paid' => $transaction->dp_paid,
                 'remaining_amount' => $transaction->remaining_amount,
-                'amount_paid'      => $transaction->amount_paid,
-                'change_amount'    => $transaction->change_amount,
-                'payment_method'   => $transaction->payment_method,
+                'amount_paid' => $transaction->amount_paid,
+                'change_amount' => $transaction->change_amount,
+                'payment_method' => $transaction->payment_method,
             ],
         ]);
     }

@@ -14,23 +14,52 @@ import type {
   ApiResponse,
 } from '../types';
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ─── Auth Internal (Owner & Kasir) ───────────────────────────────────────────
 
 export const authApi = {
-  // SEBELUMNYA: api.post<ApiResponse<LoginResponse>>(...)
-  // UBAH MENJADI: Langsung gunakan LoginResponse tanpa dibungkus ApiResponse
+  /** Unified login — backend cek users dulu, fallback ke customers */
   login: async (email: string, password: string) => {
-    await api.get('../sanctum/csrf-cookie');
-    return api.post<LoginResponse>('/auth/login', { email, password });
+    return api.post<LoginResponse>('/login', { email, password });
   },
 
-  register: async (name: string, email: string, password: string) => {
-    await api.get('../sanctum/csrf-cookie');
-    return api.post<LoginResponse>('/auth/register', { name, email, password });
+  /**
+   * Unified Google Auth.
+   * from_register=false (login page): cari di users/customers, error jika tidak ada.
+   * from_register=true  (register page): buat customer baru jika belum ada.
+   */
+  loginWithGoogle: async (access_token: string, from_register = false) => {
+    return api.post<GoogleAuthResponse>('/auth/google', { access_token, from_register });
   },
 
   logout: () => api.post('/auth/logout'),
   me: () => api.get<ApiResponse<User>>('/auth/me'),
+};
+
+// ─── Auth Customer (hanya register email/password) ───────────────────────────────
+export interface GoogleAuthResponse {
+  already_registered: boolean;
+  user: LoginResponse['user'];
+  token: string;
+}
+
+export const customerAuthApi = {
+  register: async (name: string, email: string, password: string) => {
+    return api.post<LoginResponse>('/customer-auth/register', { name, email, password });
+  },
+
+  login: async (email: string, password: string) => {
+    return api.post<LoginResponse>('/customer-auth/login', { email, password });
+  },
+
+  /** from_register=true → backend menandai already_registered jika akun sudah ada */
+  loginWithGoogle: async (access_token: string, from_register = false) => {
+    return api.post<GoogleAuthResponse>('/customer-auth/google', { access_token, from_register });
+  },
+
+  logout: () => api.post('/customer-auth/logout'),
+  me: () => api.get<ApiResponse<User>>('/customer-auth/me'),
+  publicRegister: (data: { name: string; phone: string; email?: string }) =>
+    api.post('customer-auth/register', data),
 };
 
 // ─── Devices ──────────────────────────────────────────────────────────────────
@@ -54,6 +83,9 @@ export const devicesApi = {
 
   setRate: (id: number, data: Partial<DeviceRate>) =>
     api.post<ApiResponse<DeviceRate>>(`/devices/${id}/rates`, data),
+  schedule: (id: number, date: string) =>
+    api.get(`/public/devices/${id}/schedule`, { params: { date } }),
+  publicList: () => api.get('/public/devices'),
 };
 
 // ─── Customers ────────────────────────────────────────────────────────────────
@@ -82,19 +114,24 @@ export const bookingsApi = {
 
   confirm: (id: number) => api.patch(`/bookings/${id}/confirm`),
 
-  reject: (id: number, cancel_reason: string) =>
-    api.patch(`/bookings/${id}/reject`, { cancel_reason }),
+  reject: (id: number, reason: string) =>
+    api.patch(`/bookings/${id}/reject`, { reason }),
 
-  cancel: (id: number, cancel_reason: string) =>
-    api.patch(`/bookings/${id}/cancel`, { cancel_reason }),
+  cancel: (id: number, reason: string) =>
+    api.patch(`/bookings/${id}/cancel`, { reason }),
 
   refund: (id: number, data: { reason: string; refund_method: string }) =>
     api.post<ApiResponse<any>>(`/bookings/${id}/refund`, data),
+  changeDevice: (id: number, deviceId: number) =>
+    api.patch(`/bookings/${id}/change-device`, { device_id: deviceId }),
+  publicCreate: (data: FormData) =>
+    api.post('/public/bookings', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
 };
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
 
 export const sessionsApi = {
+  list: (params?: object) => api.get('/sessions', { params }),
   active: () => api.get<ApiResponse<PlaySession[]>>('/sessions/active'),
 
   show: (id: number) => api.get<ApiResponse<PlaySession>>(`/sessions/${id}`),
@@ -103,6 +140,24 @@ export const sessionsApi = {
     api.post<ApiResponse<PlaySession>>('/sessions', data),
 
   end: (id: number) => api.patch<ApiResponse<PlaySession>>(`/sessions/${id}/end`),
+  startWalkIn: (data: {
+    device_id: number
+    session_type: 'per_jam' | 'bebas'
+    duration_minutes?: number
+    customer?: { name?: string; phone?: string }
+    fnb_items?: { fnb_item_id: number; quantity: number }[]
+  }) => api.post('/sessions/start-walkin', data),
+  startFromBooking: (bookingId: number) =>
+    api.post(`/sessions/start-booking/${bookingId}`, { booking_id: bookingId }),
+  addFnb: (sessionId: number, items: { fnb_item_id: number; quantity: number }[]) =>
+    api.post(`/sessions/${sessionId}/add-fnb`, { items }),
+  extend: (sessionId: number, additionalMinutes: number) =>
+    api.post(`/sessions/${sessionId}/extend`, { additional_minutes: additionalMinutes }),
+  checkout: (sessionId: number, paymentMethod: string, amountPaid: number) =>
+    api.post(`/sessions/${sessionId}/checkout`, {
+      payment_method: paymentMethod,
+      amount_paid: amountPaid,
+    }),
 };
 
 // ─── FnB ─────────────────────────────────────────────────────────────────────
@@ -127,6 +182,7 @@ export const fnbApi = {
 
   updateStock: (id: number, stock: number) =>
     api.patch(`/fnb-items/${id}/stock`, { stock }),
+  deleteItem: (id: number) => api.delete(`/fnb-items/${id}`),
 };
 
 // ─── Transactions ─────────────────────────────────────────────────────────────
@@ -137,7 +193,7 @@ export const transactionsApi = {
     items: { fnb_item_id: number; quantity: number }[];
     payment_method: string;
     amount_paid: number;
-  }) => api.post<ApiResponse<Transaction>>('/transactions', data),
+  }) => api.post<ApiResponse<Transaction>>(`/sessions/${data.session_id}/checkout`, data),
 
   show: (id: number) => api.get<ApiResponse<Transaction>>(`/transactions/${id}`),
 
@@ -176,3 +232,4 @@ export const reportsApi = {
   export: (type: 'excel' | 'pdf', params: { from: string; to: string }) =>
     api.get(`/reports/export/${type}`, { params, responseType: 'blob' }),
 };
+

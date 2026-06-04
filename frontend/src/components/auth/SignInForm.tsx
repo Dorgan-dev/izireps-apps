@@ -1,3 +1,4 @@
+import { useGoogleLogin } from '@react-oauth/google';
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ChevronLeftIcon, EyeCloseIcon, EyeIcon } from "../../icons";
@@ -17,28 +18,41 @@ export default function SignInForm() {
 
   // KUNCI PERBAIKAN: Ambil fungsi aksi dari Zustand store kelompok Anda
   // (Sesuaikan nama fungsi 'login' atau 'setAuth' sesuai isi file authStore.ts Anda)
-  const { login, isLoading } = useAuthStore();
+  const { login, loginWithGoogle, isLoading } = useAuthStore();
+
+  const handleGoogleAuth = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setError("");
+      try {
+        // fromRegister=false → login only, tidak buat akun baru
+        await loginWithGoogle(tokenResponse.access_token, isChecked, false);
+        const { user } = useAuthStore.getState();
+        if (user?.role === "owner") navigate("/owner");
+        else if (user?.role === "cashier") navigate("/cashier");
+        else navigate("/"); // customer yang salah halaman → ke landing
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Login Google gagal.");
+      }
+    },
+    onError: () => {
+      setError("Login Google dibatalkan atau gagal.");
+    },
+  });
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
     try {
-      // 1. Panggil fungsi login dari authStore (otomatis nembak API & update state)
       await login(email, password, isChecked);
-
-      // 2. Ambil data user terbaru dari store
       const { user } = useAuthStore.getState();
-
-      // 3. Lakukan redirect sesuai role
       if (user?.role === "owner") {
         navigate("/owner");
       } else if (user?.role === "cashier") {
         navigate("/cashier");
+      } else {
+        navigate("/");
       }
-
     } catch (err: any) {
-      // Tangkap error jika login gagal (error message juga otomatis disimpan di authStore.error)
       setError(err.response?.data?.message || "Login gagal, periksa akun Anda.");
     }
   };
@@ -66,7 +80,11 @@ export default function SignInForm() {
           </div>
           <div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5">
-              <button className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
+              <button 
+                type="button"
+                onClick={() => handleGoogleAuth()}
+                disabled={isLoading}
+                className="inline-flex items-center justify-center gap-3 py-3 text-sm font-normal text-gray-700 transition-colors bg-gray-100 rounded-lg px-7 hover:bg-gray-200 hover:text-gray-800 dark:bg-white/5 dark:text-white/90 dark:hover:bg-white/10">
                 <svg
                   width="20"
                   height="20"
