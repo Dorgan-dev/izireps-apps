@@ -3,7 +3,7 @@ import { DropdownItem } from "../ui/dropdown/DropdownItem";
 import { Dropdown } from "../ui/dropdown/Dropdown";
 import { useNavigate } from "react-router";
 import { useAuthStore } from "../../store/authStore";
-import { TbLogout2, TbUserCircle, TbHistory, TbSettings, TbLayoutDashboard } from "react-icons/tb";
+import { TbLogout2, TbUserCircle, TbHistory, TbLayoutDashboard } from "react-icons/tb";
 
 export default function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,11 +28,6 @@ export default function UserDropdown() {
         to: "/owner",
         icon: <TbLayoutDashboard size={20} />,
       },
-      {
-        label: "Pengaturan Akun",
-        to: "/settings",
-        icon: <TbSettings size={20} />,
-      },
     ],
 
     cashier: [
@@ -40,11 +35,6 @@ export default function UserDropdown() {
         label: "Dasbor",
         to: "/cashier",
         icon: <TbLayoutDashboard size={20} />,
-      },
-      {
-        label: "Pengaturan Akun",
-        to: "/settings",
-        icon: <TbSettings size={20} />,
       },
     ],
 
@@ -62,6 +52,8 @@ export default function UserDropdown() {
   const menus =
     menuByRole[role as keyof typeof menuByRole] ??
     menuByRole.customer;
+
+  const profileRoute = role === "owner" ? "/owner/profile" : role === "cashier" ? "/cashier/profile" : "/profile";
 
   return (
     <div className="relative">
@@ -117,7 +109,7 @@ export default function UserDropdown() {
 
         <ul className="flex flex-col gap-1 pt-4 pb-3 border-b border-gray-200 dark:border-gray-800">
           <li>
-            <DropdownItem onItemClick={closeDropdown} tag="a" to="/profile"
+            <DropdownItem onItemClick={closeDropdown} tag="a" to={profileRoute}
               className="flex items-center gap-3 px-3 py-2 font-medium text-gray-700 rounded-lg group text-theme-sm hover:bg-gray-100 dark:text-gray-400">
               <TbUserCircle size={20} />
               <span>Profil</span>

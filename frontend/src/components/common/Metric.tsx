@@ -2,12 +2,12 @@ import React from 'react'
 
 interface MetricProps {
   title: string
-  amount?: number
-  icon?: React.ReactNode
+  amount?: number | string;
+  icon?: React.ReactNode;
 
   // tambahan custom color
-  iconBg?: string
-  iconColor?: string
+  iconBg?: string;
+  iconColor?: string;
 }
 
 const Metric: React.FC<MetricProps> = ({
@@ -19,8 +19,8 @@ const Metric: React.FC<MetricProps> = ({
   iconColor = 'text-gray-700 dark:text-white',
 }) => {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03]">
-      <div className="flex items-center gap-4">
+    <div className="rounded-2xl border border-gray-200 bg-white p-2 md:p-5 dark:border-gray-800 dark:bg-white/[0.03]">
+      <div className="flex items-center gap-2 md:gap-4">
         
         {/* Icon */}
         <div
@@ -35,7 +35,7 @@ const Metric: React.FC<MetricProps> = ({
             {title}
           </span>
 
-          <h4 className="mt-1 text-2xl font-bold text-gray-800 dark:text-white/90">
+          <h4 className="mt-1 text-lg font-bold text-gray-800 dark:text-white/90 md:text-2xl">
             {amount}
           </h4>
         </div>

@@ -11,10 +11,9 @@ import Button from '../../components/ui/button/Button'
 import Metric from '../../components/common/Metric'
 import Select from "../../components/form/Select";
 import Modal from '../../components/ui/modal';
-import { deviceApi } from '../../api'
+import { devicesApi } from '../../services/api'
 import { Device } from '../../types'
 import { useState } from 'react'
-import api from '../../api'
 
 export default function Devices() {
   const qc = useQueryClient()
@@ -26,11 +25,11 @@ export default function Devices() {
   const [filterStatus, setFilterStatus] = useState('all')
   const { data: devices, isLoading } = useQuery({
     queryKey: ['devices'],
-    queryFn: () => deviceApi.list().then((r) => r.data.data as Device[]),
+    queryFn: () => devicesApi.list().then((r) => r.data.data as Device[]),
     refetchInterval: 15000,
   });
   const deleteMutation = useMutation({
-    mutationFn: (d: Device) => api.delete(`/devices/${d.id}`),
+    mutationFn: (d: Device) => devicesApi.delete(`/devices/${d.id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['devices'] })
       setDeleteDevice(null)
@@ -204,8 +203,7 @@ export default function Devices() {
           isOpen={!!rateDevice}
           onClose={() => setRateDevice(null)}
           title={`Tarif — ${rateDevice?.name}`}
-          size="lg"
-        >
+          size="lg">
           {rateDevice && (
             <RatePanel
               device={rateDevice}
@@ -226,8 +224,7 @@ export default function Devices() {
           title={`Hapus ${deleteDevice?.name}?`}
           description="Perangkat akan dihapus permanen. Riwayat sesi dan transaksi yang sudah ada tetap tersimpan."
           confirmLabel="Hapus perangkat"
-          variant="danger"
-        />
+          variant="danger"/>
       </div>
     </>
   )

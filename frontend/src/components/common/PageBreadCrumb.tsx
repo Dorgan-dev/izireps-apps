@@ -1,4 +1,5 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import { IoArrowBack } from "react-icons/io5";
 
 interface BreadcrumbItem {
   label: string;
@@ -8,23 +9,37 @@ interface BreadcrumbItem {
 interface BreadcrumbProps {
   items: BreadcrumbItem[];
   pageDescription?: string;
+  showBackButton?: boolean;
 }
 
 const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
   items,
   pageDescription,
+  showBackButton = true,
 }) => {
+  const navigate = useNavigate();
+
   return (
-    <div className="mb-4">
+    <div className="mb-6">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        {/* Page Title (ambil item terakhir) */}
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-white/90">
-          {items[items.length - 1]?.label}
-        </h2>
+        {/* Tombol Kembali */}
+        <div>
+          {showBackButton && (
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-gray-500 dark:text-white/90 dark:hover:text-white/70 transition-colors cursor-pointer"
+              title="Kembali ke halaman sebelumnya"
+              aria-label="Kembali"
+            >
+              <IoArrowBack size={20} />
+              <span>Kembali</span>
+            </button>
+          )}
+        </div>
 
-        {/* Breadcrumb */}
-        <nav>
+        {/* Breadcrumb Navigation */}
+        <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-1.5">
             <li>
               <Link
@@ -34,13 +49,12 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
                 Home
               </Link>
             </li>
-
+            
             {items.map((item, index) => {
               const isLast = index === items.length - 1;
-
               return (
                 <li key={index} className="flex items-center gap-1.5">
-                  {/* Separator */}
+                  {/* Separator SVG */}
                   <svg
                     className="stroke-current text-gray-400"
                     width="17"
@@ -57,7 +71,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
                     />
                   </svg>
 
-                  {/* Item */}
+                  {/* Item Link atau Text Aktif */}
                   {item.path && !isLast ? (
                     <Link
                       to={item.path}
@@ -66,7 +80,7 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
                       {item.label}
                     </Link>
                   ) : (
-                    <span className="text-sm text-gray-800 dark:text-white/90 font-medium">
+                    <span className="text-sm font-medium text-gray-800 dark:text-white/90" aria-current="page">
                       {item.label}
                     </span>
                   )}
@@ -76,12 +90,9 @@ const PageBreadcrumb: React.FC<BreadcrumbProps> = ({
           </ol>
         </nav>
       </div>
-
-      {/* Description */}
+      {/* Description Section */}
       {pageDescription && (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {pageDescription}
-        </p>
+        ""
       )}
     </div>
   );

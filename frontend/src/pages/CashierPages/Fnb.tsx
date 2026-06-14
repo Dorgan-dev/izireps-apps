@@ -2,9 +2,14 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FnbCategory, FnbItem } from '../../types'
 import { fnbApi } from '../../services/api'
-import { formatRupiah } from '../../utils'
-import { Button, Field, Input, Select, Badge, EmptyState, Spinner} from '../../components/common'
+import Button from '../../components/ui/button/Button'
+import { Field, Input, EmptyState, Spinner } from '../../components/common'
+import Alert from '../../components/ui/alert/Alert'
 import Modal from '../../components/ui/modal'
+import FnbTable from '../../components/tables/FnbTables'
+import PageBreadcrumb from '../../components/common/PageBreadCrumb'
+import ComponentCard from '../../components/common/ComponentCard'
+import Select from "../../components/form/Select";
 
 // ─── Form tambah/edit item ────────────────────────────────────────────────────
 function ItemForm({
@@ -42,11 +47,14 @@ function ItemForm({
   return (
     <div className="flex flex-col gap-4">
       <Field label="Kategori">
-        <Select value={form.category_id} onChange={e => set('category_id', e.target.value)}>
-          {categories.filter(c => c.is_active).map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </Select>
+        <Select
+          value={form.category_id}
+          onChange={(val) => set('category_id', val)}
+          options={categories.filter(c => c.is_active).map(c => ({
+            label: c.name,
+            value: String(c.id)
+          }))}
+        />
       </Field>
       <Field label="Nama item">
         <Input value={form.name} onChange={e => set('name', e.target.value)}
@@ -80,12 +88,6 @@ function ItemForm({
   )
 }
 
-// ─── Komponen utama ───────────────────────────────────────────────────────────
-// ⚠️ SESUAIKAN:
-//   - Kasir bisa tambah & edit item, tapi TIDAK bisa hapus (hanya owner)
-//   - Jika ingin kasir bisa hapus, tambahkan tombol hapus dan
-//     pastikan endpoint DELETE /api/fnb-items/:id diberi akses 'cashier' di backend
-//   - GET /api/fnb-categories harus return dengan relasi items
 export default function FnbManager() {
   const qc = useQueryClient()
   const [showForm, setShowForm] = useState(false)
@@ -119,107 +121,68 @@ export default function FnbManager() {
   const lowStock = allItems.filter(i => i.stock <= 3 && i.is_available).length
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Info stok menipis */}
-      {lowStock > 0 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-700 flex items-center gap-2">
-          <span>⚠️</span>
-          <span><strong>{lowStock} item</strong> stoknya menipis (≤ 3). Segera restok atau nonaktifkan.</span>
-        </div>
-      )}
-
-      {/* Filter kategori + tombol tambah */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex gap-2 flex-wrap">
-          <button onClick={() => setCatFilter(null)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catFilter === null
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-              }`}>
-            Semua
-          </button>
-          {cats?.map(c => (
-            <button key={c.id} onClick={() => setCatFilter(c.id)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catFilter === c.id
-                  ? 'bg-gray-900 text-white border-gray-900'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                }`}>
-              {c.name}
-            </button>
-          ))}
-        </div>
-        <Button variant="primary" size="sm"
-          onClick={() => { setEditItem(null); setShowForm(true) }}
+    <><PageBreadcrumb pageDescription='Kelola makanan dan minuman' items={[{ label: 'F&B', path: '/fnb' }]}></PageBreadcrumb>
+      <ComponentCard title='Daftar jajanan' headerAction={
+        <Button size="md" onClick={() => { setEditItem(null); setShowForm(true) }}
           disabled={!cats?.length}>
           + Tambah item
         </Button>
-      </div>
-
-      {/* Tabel item */}
-      {loadingCats || loadingItems ? <Spinner className="py-16" /> :
-        !allItems.length ? (
-          <EmptyState icon="🍜" title="Belum ada item"
-            description={catFilter ? 'Tidak ada item di kategori ini' : 'Tambah item F&B untuk mulai berjualan'} />
-        ) : (
-          <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Item</th>
-                  <th className="text-left px-4 py-3 text-xs font-medium text-gray-500">Kategori</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Harga</th>
-                  <th className="text-right px-4 py-3 text-xs font-medium text-gray-500">Stok</th>
-                  <th className="text-center px-4 py-3 text-xs font-medium text-gray-500">Status</th>
-                  <th className="px-4 py-3"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {allItems.map((item, idx) => (
-                  <tr key={item.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}>
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
-                    <td className="px-4 py-3 text-xs text-gray-400">
-                      {cats?.find(c => c.id === item.category_id)?.name ?? '—'}
-                    </td>
-                    <td className="px-4 py-3 text-right">{formatRupiah(item.price)}</td>
-                    <td className={`px-4 py-3 text-right font-medium tabular-nums ${item.stock <= 3 ? 'text-red-500' : 'text-gray-900'}`}>
-                      {item.stock}
-                      {item.stock <= 3 && <span className="ml-1 text-xs">⚠</span>}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button onClick={() => toggleMutation.mutate(item)}>
-                        <Badge
-                          label={item.is_available ? 'Tersedia' : 'Habis'}
-                          className={item.is_available
-                            ? 'bg-green-100 text-green-800 cursor-pointer hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-500 cursor-pointer hover:bg-gray-200'}
-                        />
-                      </button>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Button size="sm" variant="ghost"
-                        onClick={() => { setEditItem(item); setShowForm(true) }}>
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      }>
+        <div className="flex flex-col gap-4">
+          {/* Filter kategori*/}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex gap-2 flex-wrap">
+              <button onClick={() => setCatFilter(null)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catFilter === null
+                  ? 'bg-gray-900 text-white border-gray-900'
+                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                  }`}>
+                Semua
+              </button>
+              {cats?.map(c => (
+                <button key={c.id} onClick={() => setCatFilter(c.id)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${catFilter === c.id
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}>
+                  {c.name}
+                </button>
+              ))}
+            </div>
           </div>
-        )}
+          {/* Info stok menipis */}
+          {lowStock > 0 && (
+            <><Alert variant="warning" title='Stok Menipis' message={`Ada ${lowStock} item yang stoknya sedikit. Segera restok atau nonaktifkan.`}></Alert></>
+          )}
 
-      <Modal
-        isOpen={showForm}
-        onClose={() => { setShowForm(false); setEditItem(null) }}
-        title={editItem ? `Edit — ${editItem.name}` : 'Tambah item F&B'}
-      >
-        <ItemForm
-          item={editItem}
-          categories={cats ?? []}
-          onClose={() => { setShowForm(false); setEditItem(null) }}
-          onSuccess={handleFormSuccess}
-        />
-      </Modal>
-    </div>
+          {/* Tabel item */}
+          {loadingCats || loadingItems ? <Spinner className="py-16" /> :
+            !allItems.length ? (
+              <EmptyState icon="🍜" title="Belum ada item"
+                description={catFilter ? 'Tidak ada item di kategori ini' : 'Tambah item F&B untuk mulai berjualan'} />
+            ) : (
+              <FnbTable
+                items={allItems}
+                categories={cats ?? []}
+                onEdit={(item) => { setEditItem(item); setShowForm(true); }}
+                onToggleStatus={(item) => toggleMutation.mutate(item)}
+              />
+            )}
+
+          <Modal
+            isOpen={showForm}
+            onClose={() => { setShowForm(false); setEditItem(null) }}
+            title={editItem ? `Edit — ${editItem.name}` : 'Tambah item F&B'}
+          >
+            <ItemForm
+              item={editItem}
+              categories={cats ?? []}
+              onClose={() => { setShowForm(false); setEditItem(null) }}
+              onSuccess={handleFormSuccess}
+            />
+          </Modal>
+        </div>
+      </ComponentCard>
+    </>
   )
 }

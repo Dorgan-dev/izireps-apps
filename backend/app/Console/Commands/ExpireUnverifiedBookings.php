@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
 
 class ExpireUnverifiedBookings extends Command
 {
-    protected $signature   = 'bookings:expire-unverified';
+    protected $signature = 'bookings:expire-unverified';
     protected $description = 'Batalkan booking pending yang melebihi batas waktu verifikasi 1 jam';
 
     public function handle(BookingService $service): void
@@ -24,6 +24,7 @@ class ExpireUnverifiedBookings extends Command
             ->get();
 
         foreach ($expired as $booking) {
+            /** @var \App\Models\Booking $booking */  // ← PHPDoc hint untuk IDE
             $service->expireUnverified($booking);
             $this->info("Booking #{$booking->id} expired.");
         }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { Device } from '../../types'
-import { deviceApi } from '../../api'
+import { devicesApi } from '../../services/api'
 import { Button, Field, Input } from '../ui/Form'
 import Select from '../form/Select'
 
@@ -27,8 +27,8 @@ export function DeviceForm({ device, onClose, onSuccess }: DeviceFormProps) {
 
   const mutation = useMutation({
     mutationFn: () => isEdit
-      ? deviceApi.update(device!.id, form)
-      : deviceApi.create(form),
+      ? devicesApi.update(device!.id, form)
+      : devicesApi.create(form),
     onSuccess,
   })
 
@@ -39,12 +39,13 @@ export function DeviceForm({ device, onClose, onSuccess }: DeviceFormProps) {
           <Input value={form.name} onChange={e => set('name', e.target.value)} placeholder="cth. PS5 Unit 1" />
         </Field>
         <Field label="Tipe PlayStation">
-          <Select value={form.ps_type} onChange={e => set('ps_type', e.target.value)}>
-            <option value="PS5">PS5</option>
-            <option value="PS4">PS4</option>
-            <option value="PS4 Pro">PS4 Pro</option>
-            <option value="PS3">PS3</option>
-          </Select>
+          <Select value={form.ps_type} onChange={e => set('ps_type', e)}
+            options={[
+              { value: "PS5", label: "PS5" },
+              { value: "PS4", label: "PS4" },
+              { value: "PS4 Pro", label: "PS4 Pro" },
+              { value: "PS3", label: "PS3" },
+            ]}></Select>
         </Field>
       </div>
 

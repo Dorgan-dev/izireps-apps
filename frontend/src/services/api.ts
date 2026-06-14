@@ -66,6 +66,7 @@ export const customerAuthApi = {
 
 export const devicesApi = {
   list: () => api.get<ApiResponse<Device[]>>('/devices'),
+  delete: (id: string | number) => api.delete(`/devices/${id}`),
 
   show: (id: number) => api.get<ApiResponse<Device>>(`/devices/${id}`),
 
@@ -80,6 +81,8 @@ export const devicesApi = {
   logs: (id: number) => api.get<ApiResponse<any[]>>(`/devices/${id}/logs`),
 
   rates: (id: number) => api.get<ApiResponse<DeviceRate[]>>(`/devices/${id}/rates`),
+
+  updateRate: (rateId: number, data: any) => api.put(`/rates/${rateId}`, data),
 
   setRate: (id: number, data: Partial<DeviceRate>) =>
     api.post<ApiResponse<DeviceRate>>(`/devices/${id}/rates`, data),
@@ -142,7 +145,7 @@ export const sessionsApi = {
   end: (id: number) => api.patch<ApiResponse<PlaySession>>(`/sessions/${id}/end`),
   startWalkIn: (data: {
     device_id: number
-    session_type: 'per_jam' | 'bebas'
+    session_type: 'per_hour' | 'free_play'
     duration_minutes?: number
     customer?: { name?: string; phone?: string }
     fnb_items?: { fnb_item_id: number; quantity: number }[]
@@ -197,7 +200,7 @@ export const transactionsApi = {
 
   show: (id: number) => api.get<ApiResponse<Transaction>>(`/transactions/${id}`),
 
-  list: (params?: { date?: string; cashier_id?: number; page?: number }) =>
+  list: (params?: { date?: string; from?: string; to?: string; cashier_id?: number; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Transaction>>('/transactions', { params }),
 };
 

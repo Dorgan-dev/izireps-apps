@@ -9,9 +9,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Booking;
 use App\Services\BookingService;
-use Carbon\Carbon;
 use Illuminate\Console\Command;
 
 class AutoCancelNoShowBookings extends Command
@@ -29,13 +27,13 @@ class AutoCancelNoShowBookings extends Command
         // Semua booking jam 14:00 (<= 14:05) dinyatakan hangus/no-show.
         $cutoffTime = $now->subMinutes(20)->format('H:i:s');
 
-        // 3. Ambil data dengan query standar Eloquent (lebih aman daripada whereRaw kompleks)
         $noShows = \App\Models\Booking::where('status', 'confirmed')
             ->whereDate('booking_date', today())
             ->where('start_time', '<=', $cutoffTime)
             ->get();
 
         foreach ($noShows as $booking) {
+            /** @var \App\Models\Booking $booking */  // ← PHPDoc hint untuk IDE
             $service->cancelBySystem($booking);
             $this->info("Booking #{$booking->id} dibatalkan sistem (no-show).");
         }

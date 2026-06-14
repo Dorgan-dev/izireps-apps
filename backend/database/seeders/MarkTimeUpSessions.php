@@ -3,7 +3,7 @@
 // app/Console/Commands/MarkTimeUpSessions.php
 // ============================================================
 // Scheduler memanggil command ini setiap menit.
-// Mencari sesi per_jam yang planned_end_at-nya sudah lewat
+// Mencari sesi per_hour yang planned_end_at-nya sudah lewat
 // dan mengubah statusnya menjadi time_up.
 
 namespace App\Console\Commands;
@@ -14,13 +14,13 @@ use Illuminate\Console\Command;
 
 class MarkTimeUpSessions extends Command
 {
-    protected $signature   = 'sessions:mark-time-up';
-    protected $description = 'Tandai sesi per_jam yang waktunya sudah habis sebagai time_up';
+    protected $signature = 'sessions:mark-time-up';
+    protected $description = 'Tandai sesi per_hour yang waktunya sudah habis sebagai time_up';
 
     public function handle(SessionService $service): void
     {
         $expired = PlaySession::where('status', 'active')
-            ->where('session_type', 'per_jam')
+            ->where('session_type', 'per_hour')
             ->where('planned_end_at', '<=', now())
             ->get();
 

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Device, DeviceRate } from '../../types'
-import api from '../../api'
+import { devicesApi } from '../../services/api'
 import { formatRupiah, formatTime } from '../../utils'
 import { Button } from '../ui/Form'
 import Modal from '../ui/modal'
@@ -19,11 +19,11 @@ export function RatePanel({ device, onClose }: RatePanelProps) {
 
   const { data: rates, isLoading } = useQuery({
     queryKey: ['rates', device.id],
-    queryFn: () => api.get(`/devices/${device.id}/rates`).then(r => r.data.data as DeviceRate[]),
+    queryFn: () => devicesApi.rates(device.id).then(r => r.data.data as DeviceRate[]),
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (rate: DeviceRate) => api.delete(`/rates/${rate.id}`),
+    mutationFn: (rate: DeviceRate) => devicesApi.delete(`/rates/${rate.id}`),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['rates', device.id] })
       setDeleteRate(null)

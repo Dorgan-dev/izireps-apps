@@ -18,7 +18,7 @@ export default function LandingNavbar() {
   const { token } = useAuthStore();
   const isAuthenticated = !!token;
   return (
-    <header className="fixed z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md shadow-sm dark:border-gray-800 dark:bg-gray-900/80">
+    <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-md shadow-sm dark:border-gray-800 dark:bg-gray-900/80">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
 
         {/* Logo */}

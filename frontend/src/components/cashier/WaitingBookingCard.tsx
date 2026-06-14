@@ -58,7 +58,7 @@ export default function WaitingBookingCard({ booking, onStart, isStarting }: { b
         <div className="bg-gray-50 rounded-xl px-3 py-2">
           <p className="text-xs text-gray-400 mb-0.5">Waktu</p>
           <p className="text-sm font-medium text-gray-800">
-             {booking.start_time.slice(0, 5)} - {booking.end_time.slice(0, 5)}
+             {booking.start_time?.slice(0, 5)} - {booking.end_time?.slice(0, 5)}
           </p>
         </div>
         <div className="bg-gray-50 rounded-xl px-3 py-2">

@@ -43,20 +43,20 @@ export default function LandingHero() {
             {/* CTA */}
             <div className="mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row lg:justify-start">
               <button
-                onClick={() => navigate("/booking")}
+                onClick={() => navigate("/devices")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-brand-600 hover:shadow-lg sm:w-auto"
               >
                 <CalendarCheck size={18} />
                 Mulai Booking
               </button>
 
-              <a
-                href="#jadwal"
+              <button
+                onClick={() => navigate("/schedule")}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.07] sm:w-auto"
               >
                 Lihat Jadwal
                 <ArrowRight size={16} />
-              </a>
+              </button>
             </div>
           </div>
 

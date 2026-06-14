@@ -15,7 +15,7 @@ function ElapsedTimer({ startedAt }: { startedAt: string }) {
   return <span className="tabular-nums font-medium">{formatDuration(m)}</span>
 }
 
-// ─── Countdown untuk sesi per_jam ────────────────────────────────────────────
+// ─── Countdown untuk sesi per_hour ────────────────────────────────────────────
 function CountdownTimer({ plannedEndAt }: { plannedEndAt: string }) {
   const calc = () => {
     const diff = Math.max(0, Math.floor((new Date(plannedEndAt).getTime() - Date.now()) / 60000))
@@ -64,7 +64,7 @@ export default function SessionCard({ session, onAddFnb }: { session: PlaySessio
             </span>
           )}
           <Badge
-            label={session.session_type === 'per_jam' ? 'Per Jam' : 'Bebas'}
+            label={session.session_type === 'per_hour' ? 'Per Jam' : 'Bebas'}
             className="bg-gray-100 text-gray-600 text-xs"
           />
           <Badge
@@ -86,7 +86,7 @@ export default function SessionCard({ session, onAddFnb }: { session: PlaySessio
           <p className="text-xs text-gray-400 mb-0.5">Durasi</p>
           <ElapsedTimer startedAt={session.started_at} />
         </div>
-        {session.session_type === 'per_jam' && session.planned_end_at && (
+        {session.session_type === 'per_hour' && session.planned_end_at && (
           <div className={`rounded-xl px-3 py-2 ${isTimeUp ? 'bg-red-50' : 'bg-gray-50'}`}>
             <p className="text-xs text-gray-400 mb-0.5">Waktu</p>
             {isTimeUp

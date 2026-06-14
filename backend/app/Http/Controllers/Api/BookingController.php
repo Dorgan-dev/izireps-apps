@@ -12,7 +12,6 @@ use App\Models\Booking;
 use App\Models\Device;
 use App\Services\BookingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class BookingController extends Controller
 {
@@ -36,7 +35,8 @@ class BookingController extends Controller
             'customer_id'  => 'required|exists:customers,id',
             'booking_date' => 'required|date|after_or_equal:today',
             'start_time'   => 'required|date_format:H:i',
-            'end_time'     => 'required|date_format:H:i|after:start_time',
+            'time_type'    => 'required|in:per_hour,free_play',
+            'end_time'     => 'required_if:time_type,per_hour|nullable|date_format:H:i',
             'dp_proof'     => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 

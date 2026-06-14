@@ -31,13 +31,13 @@ class PlaySession extends Model
     ];
 
     protected $casts = [
-        'status'         => SessionStatus::class,
-        'gaming_cost'    => 'decimal:2',
-        'session_type'   => SessionType::class,
-        'started_at'     => 'datetime',
+        'status' => SessionStatus::class,
+        'gaming_cost' => 'decimal:2',
+        'session_type' => SessionType::class,
+        'started_at' => 'datetime',
         'extended_until' => 'datetime',
         'planned_end_at' => 'datetime',
-        'ended_at'       => 'datetime',
+        'ended_at' => 'datetime',
     ];
 
     // ── Relationships ──────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ class PlaySession extends Model
      */
     public function isExtended(): bool
     {
-        return ! is_null($this->extended_until);
+        return !is_null($this->extended_until);
         return $this->extend_count > 0;
 
     }
@@ -98,7 +98,8 @@ class PlaySession extends Model
     public function getRunningCostAttribute(): float
     {
         $rate = $this->device->current_rate;
-        if (! $rate) return 0;
+        if (!$rate)
+            return 0;
 
         $hours = $this->elapsed_minutes / 60;
         return round($hours * $rate->price_per_hour, 2);
@@ -110,7 +111,8 @@ class PlaySession extends Model
      */
     public function getRemainingMinutesAttribute(): ?int
     {
-        if (! $this->extended_until) return null;
+        if (!$this->extended_until)
+            return null;
         return (int) now()->diffInMinutes($this->extended_until, false);
     }
 
@@ -131,13 +133,14 @@ class PlaySession extends Model
 
     /**
      * Hitung biaya gaming berdasarkan durasi dan tipe sesi.
-     * Untuk mode per_jam: durasi x tarif/jam (proporsional per menit).
+     * Untuk mode per_hour: durasi x tarif/jam (proporsional per menit).
      * Untuk mode bebas: kalkulasi siklus via FreePlayRate::calculate().
      */
     public function calculateGamingCost(int $minutes): float
     {
         $rate = $this->device->current_rate;
-        if (! $rate) return 0;
+        if (!$rate)
+            return 0;
 
         if ($this->isPerJam()) {
             return round(($minutes / 60) * $rate->price_per_hour, 2);

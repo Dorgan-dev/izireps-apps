@@ -3,7 +3,7 @@ export type SessionStatus = 'active' | 'time_up' | 'completed' | 'cancelled'
 export type BookingStatus = 'pending' | 'confirmed' | 'in_use' | 'completed' | 'rejected' | 'cancelled' | 'expired'
 export type TransactionStatus = 'pending' | 'paid' | 'cancelled'
 export type PaymentMethod = 'cash' | 'qris' | 'transfer'
-export type SessionType = 'per_jam' | 'bebas'
+export type SessionType = 'per_hour' | 'free_play'
 export type UserRole = 'owner' | 'cashier' | 'customer'
 
 export interface ApiResponse<T> { data: T }
@@ -17,8 +17,8 @@ export interface FnbItem { id: number; category_id: number; name: string; price:
 export interface DeviceRate { id: number; price_per_hour: number; effective_from: string | null; effective_until: string | null; is_active: boolean }
 export interface TransactionItem { id: number; fnb_item_id: number | null; item_name: string; quantity: number; unit_price: number; subtotal: number }
 export interface Device { id: number; name: string; ps_type: string; tv_ip_address: string | null; status: DeviceStatus; current_rate: DeviceRate | null; ps_sn: string; tv: string; tv_sn: string; tv_mac_address: string;}
-export interface Transaction { id: number; session_id: number; invoice_number: string; gaming_total: number; fnb_total: number; grand_total: number; dp_paid: number; remaining_amount: number; amount_paid: number; change_amount: number; payment_method: PaymentMethod | null; status: TransactionStatus; paid_at: string | null; items?: TransactionItem[] }
-export interface Booking { id: number; device_id: number; customer_id: number; booking_date: string; start_time: string; end_time: string; duration_minutes: number; estimated_cost: number; dp_amount: number; dp_proof_file: string | null; status: BookingStatus; cancel_reason: string | null; expires_at: string | null; created_at: string; device?: Device; customer?: Customer }
+export interface Transaction { id: number; session_id: number; invoice_number: string; gaming_total: number; fnb_total: number; grand_total: number; dp_paid: number; remaining_amount: number; amount_paid: number; change_amount: number; payment_method: PaymentMethod | null; status: TransactionStatus; paid_at: string | null; items?: TransactionItem[]; session?: PlaySession; cashier?: User; }
+export interface Booking { id: number; device_id: number; customer_id: number; booking_date: string; start_time: string; end_time: string; time_type?: string; duration_minutes: number; estimated_cost: number; dp_amount: number; dp_proof_file: string | null; status: BookingStatus; cancel_reason: string | null; expires_at: string | null; created_at: string; device?: Device; customer?: Customer }
 export interface PlaySession {
     id: number;
     device_id: number;
@@ -37,4 +37,5 @@ export interface PlaySession {
     session_type: SessionType;
     planned_end_at: string | null;
     extend_count: number;
+    cashier?: User;
 }

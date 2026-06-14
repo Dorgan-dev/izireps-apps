@@ -29,6 +29,7 @@ class TransactionController extends Controller
         $transactions = Transaction::with([
             'session.device:id,name,ps_type',
             'session.customer:id,name,phone',
+            'session.cashier:id,name',
             'cashier:id,name',
         ])
             ->when(

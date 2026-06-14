@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Storage;
 
 class BookingService
 {
-    public function __construct(protected SessionService $sessionService) {}
+    public function __construct(protected SessionService $sessionService)
+    {
+    }
 
     /**
      * Buat booking baru oleh pelanggan online.
@@ -24,34 +26,52 @@ class BookingService
     public function create(array $data, string $dpProofPath): Booking
     {
         return DB::transaction(function () use ($data, $dpProofPath) {
-            $device   = Device::findOrFail($data['device_id']);
+            $timeType = $data['time_type'] ?? 'per_hour';
+            $isPerHour = $timeType === 'per_hour';
+
+            $device = Device::findOrFail($data['device_id']);
             $customer = Customer::findOrFail($data['customer_id']);
 
-            // Cek tidak ada booking aktif yang overlap
-            $this->ensureNoConflict($device, $data['booking_date'], $data['start_time'], $data['end_time']);
+            // Inisialisasi nilai default untuk tipe free_play
+            $durationMinutes = null;
+            $estimatedCost = null;
+            $dpAmount = 20000; // Nominal DP flat untuk free_play (sesuaikan aturan bisnis)
+            $endTime = null;
 
-            $durationMinutes = Carbon::parse($data['start_time'])
-                ->diffInMinutes(Carbon::parse($data['end_time']));
+            if ($isPerHour) {
+                // 1. Cek tidak ada booking aktif yang overlap (Hanya untuk per_hour)
+                $this->ensureNoConflict($device, $data['booking_date'], $data['start_time'], $data['end_time']);
 
-            // Hitung estimasi biaya & DP
-            $rate          = $device->current_rate;
-            $estimatedCost = $rate
-                ? round(($durationMinutes / 60) * $rate->price_per_hour, 2)
-                : 0;
-            $dpAmount = round($estimatedCost / 2, 2); // 50%
+                // 2. Hitung durasi (Aman karena end_time pasti ada)
+                $durationMinutes = Carbon::parse($data['start_time'])
+                    ->diffInMinutes(Carbon::parse($data['end_time']));
 
+                // 3. Hitung estimasi biaya & DP (50%)
+                $rate = $device->current_rate;
+                $estimatedCost = $rate
+                    ? round(($durationMinutes / 60) * $rate->price_per_hour, 2)
+                    : 0;
+
+                $dpAmount = round($estimatedCost / 2, 2);
+                $endTime = $data['end_time'];
+            } else {
+                $rate = $device->current_rate;
+                $dpAmount = $rate ? $rate->price_per_hour : 0;
+            }
+
+            // Simpan data ke database
             $booking = Booking::create([
-                'device_id'        => $device->id,
-                'customer_id'      => $customer->id,
-                'booking_date'     => $data['booking_date'],
-                'start_time'       => $data['start_time'],
-                'end_time'         => $data['end_time'],
-                'duration_minutes' => $durationMinutes,
-                'estimated_cost'   => $estimatedCost,
-                'dp_amount'        => $dpAmount,
-                'dp_proof_file'    => $dpProofPath,
-                'status'           => BookingStatus::Pending,
-                'expires_at'       => now()->addHour(), // kasir punya 1 jam verifikasi
+                'device_id' => $device->id,
+                'customer_id' => $customer->id,
+                'booking_date' => $data['booking_date'],
+                'start_time' => $data['start_time'],
+                'end_time' => !$isPerHour ? null : $endTime,
+                'duration_minutes' => !$isPerHour ? null : $durationMinutes,
+                'estimated_cost' => !$isPerHour ? null : $estimatedCost,
+                'dp_amount' => $dpAmount,
+                'dp_proof_file' => $dpProofPath,
+                'status' => BookingStatus::Pending,
+                'expires_at' => now()->addMinutes(config('booking.verification_timeout_minutes')),
             ]);
 
             // Blokir slot perangkat
@@ -74,7 +94,7 @@ class BookingService
         abort_unless($booking->isPending(), 422, 'Booking tidak dalam status menunggu verifikasi.');
 
         $booking->update([
-            'status'      => BookingStatus::Confirmed,
+            'status' => BookingStatus::Confirmed,
             'verified_by' => $cashier->id,
             'verified_at' => now(),
         ]);
@@ -91,11 +111,11 @@ class BookingService
 
         return DB::transaction(function () use ($booking, $cashier, $reason) {
             $booking->update([
-                'status'        => BookingStatus::Rejected,
-                'verified_by'   => $cashier->id,
-                'verified_at'   => now(),
+                'status' => BookingStatus::Rejected,
+                'verified_by' => $cashier->id,
+                'verified_at' => now(),
                 'cancel_reason' => $reason,
-                'cancelled_by'  => BookingCancelledBy::Outlet,
+                'cancelled_by' => BookingCancelledBy::Outlet,
             ]);
 
             // Bebaskan slot perangkat
@@ -115,13 +135,16 @@ class BookingService
      */
     public function cancelByCustomer(Booking $booking): Booking
     {
-        abort_unless($booking->isCancellableByCustomer(), 422,
-            'Booking tidak dapat dibatalkan. Pembatalan hanya bisa dilakukan minimal 15 menit sebelum jam bermain.');
+        abort_unless(
+            $booking->isCancellableByCustomer(),
+            422,
+            'Booking tidak dapat dibatalkan. Pembatalan hanya bisa dilakukan minimal 15 menit sebelum jam bermain.'
+        );
 
         return DB::transaction(function () use ($booking) {
             $booking->update([
-                'status'        => BookingStatus::Cancelled,
-                'cancelled_by'  => BookingCancelledBy::Customer,
+                'status' => BookingStatus::Cancelled,
+                'cancelled_by' => BookingCancelledBy::Customer,
                 'cancel_reason' => 'Dibatalkan oleh pelanggan',
             ]);
 
@@ -144,8 +167,8 @@ class BookingService
     {
         return DB::transaction(function () use ($booking) {
             $booking->update([
-                'status'        => BookingStatus::Cancelled,
-                'cancelled_by'  => BookingCancelledBy::System,
+                'status' => BookingStatus::Cancelled,
+                'cancelled_by' => BookingCancelledBy::System,
                 'cancel_reason' => 'Dibatalkan otomatis - pelanggan tidak hadir',
             ]);
 
@@ -167,8 +190,8 @@ class BookingService
     {
         return DB::transaction(function () use ($booking) {
             $booking->update([
-                'status'        => BookingStatus::Expired,
-                'cancelled_by'  => BookingCancelledBy::System,
+                'status' => BookingStatus::Expired,
+                'cancelled_by' => BookingCancelledBy::System,
                 'cancel_reason' => 'Kedaluwarsa - tidak diverifikasi dalam 1 jam',
             ]);
 
@@ -195,20 +218,20 @@ class BookingService
     ): Booking {
         return DB::transaction(function () use ($booking, $cashier, $reason, $refundMethod) {
             $booking->update([
-                'status'        => BookingStatus::Cancelled,
-                'cancelled_by'  => BookingCancelledBy::Outlet,
+                'status' => BookingStatus::Cancelled,
+                'cancelled_by' => BookingCancelledBy::Outlet,
                 'cancel_reason' => $reason,
-                'verified_by'   => $cashier->id,
+                'verified_by' => $cashier->id,
             ]);
 
             // Buat record refund
             \App\Models\Refund::create([
-                'booking_id'    => $booking->id,
-                'processed_by'  => $cashier->id,
+                'booking_id' => $booking->id,
+                'processed_by' => $cashier->id,
                 'refund_amount' => $booking->dp_amount, // kembalikan seluruh DP yang diterima outlet
-                'reason'        => $reason,
+                'reason' => $reason,
                 'refund_method' => $refundMethod,
-                'processed_at'  => now(),
+                'processed_at' => now(),
             ]);
 
             $this->sessionService->updateDeviceStatus(
@@ -265,11 +288,11 @@ class BookingService
             ->whereIn('status', [BookingStatus::Pending, BookingStatus::Confirmed, BookingStatus::InUse])
             ->where(function ($q) use ($startTime, $endTime) {
                 $q->whereBetween('start_time', [$startTime, $endTime])
-                  ->orWhereBetween('end_time', [$startTime, $endTime])
-                  ->orWhere(function ($q2) use ($startTime, $endTime) {
-                      $q2->where('start_time', '<=', $startTime)
-                         ->where('end_time', '>=', $endTime);
-                  });
+                    ->orWhereBetween('end_time', [$startTime, $endTime])
+                    ->orWhere(function ($q2) use ($startTime, $endTime) {
+                        $q2->where('start_time', '<=', $startTime)
+                            ->where('end_time', '>=', $endTime);
+                    });
             })
             ->exists();
 

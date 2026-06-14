@@ -8,12 +8,12 @@ import InputField from '../../components/form/input/InputField';
 import FileInput from '../../components/form/input/FileInput';
 import Label from '../../components/form/Label';
 import Select from '../../components/form/Select';
-import DatePicker from '../../components/form/date-picker';
+import DatePicker from '../../components/form/DatePicker';
 import ClockTimePicker from '../../components/form/ClockTimePicker';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 // Import custom hook dan helper
-import { useDeviceBooking, getTodayDateString, getCurrentTime } from '../../hooks/useDeviceBooking';
+import { useDeviceBooking, getTodayDateString, getCurrentTime, calculateEndTime, getMinTime, getFutureTime } from '../../hooks/useDeviceBooking';
 
 const statusConfig: Record<string, { label: string; color: string; border: string; badgeBg: string }> = {
     available: { label: 'Tersedia', color: 'text-success-600 dark:text-success-400', border: 'border-success-200', badgeBg: 'bg-success-50 dark:bg-success-950/50' },
@@ -24,27 +24,8 @@ const statusConfig: Record<string, { label: string; color: string; border: strin
 
 function getTypeConfig(psType: string) {
     if (psType === 'PS3') return { icon: Monitor, color: 'text-orange-500', bg: 'bg-orange-50 dark:bg-orange-950/40' };
-    if (psType === 'PS5') return { icon: Tv2, color: 'text-success-600 dark:text-success-400', bg: 'bg-success-50 dark:bg-success-950/40' };
+    if (psType === 'PS5') return { icon: Tv2, color: 'text-success-600 dark:text-success-400', bg: 'bg-success-50 dark:bg-orange-950/40' };
     return { icon: Gamepad2, color: 'text-brand-500', bg: 'bg-brand-50 dark:bg-brand-950/40' };
-}
-
-/** Calculate end time string given start "HH:mm" and duration in hours */
-function calculateEndTime(startTime: string, durationHours: number): string {
-    if (!startTime) return '';
-    const [h, m] = startTime.split(':').map(Number);
-    const totalMinutes = h * 60 + m + durationHours * 60;
-    const endH = Math.floor(totalMinutes / 60) % 24;
-    const endM = totalMinutes % 60;
-    return `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
-}
-
-/** Returns minTime for ClockTimePicker: today → current time, future → no limit */
-function getMinTime(bookingDate: string): string | undefined {
-    const today = getTodayDateString();
-    if (bookingDate === today || !bookingDate) {
-        return getCurrentTime();
-    }
-    return undefined; // future date — no restriction
 }
 
 export default function DeviceDetail() {
@@ -58,67 +39,72 @@ export default function DeviceDetail() {
         handleBookingClick: _handleBookingClick, handleInputChange, handleBookingSubmit
     } = useDeviceBooking(id, user, navigate);
 
-    // Track apakah user sudah mengubah jam secara manual
+    const [timeType, setTimeType] = useState<string>('per_hour');
     const [isTimeEdited, setIsTimeEdited] = useState<boolean>(false);
-    // Track selected booking date to determine if time restriction applies
+    const isDatePickerOpenRef = useRef<boolean>(false);
     const [selectedBookingDate, setSelectedBookingDate] = useState<string>(getTodayDateString());
+    const durationRef = useRef(duration);
+    const timeTypeRef = useRef(timeType);
 
-    // Sinkronisasi data awal saat tombol booking pertama kali diklik
+    useEffect(() => {
+        durationRef.current = duration;
+        timeTypeRef.current = timeType;
+    }, [duration, timeType]);
+
     const handleBookingClick = useCallback(() => {
         const today = getTodayDateString();
-        const nowTime = getCurrentTime();
-        
+        const futureTime = getFutureTime(15);
         setSelectedBookingDate(today);
-        setIsTimeEdited(false); // Reset status edit jam pelangan
-        
-        // Isi form data awal secara eksplisit agar tanggal dan jam langsung sinkron di sistem
+        setIsTimeEdited(false);
+        isDatePickerOpenRef.current = false;
+        setTimeType('per_hour');
         setFormData(prev => ({
             ...prev,
             booking_date: today,
-            start_time: nowTime,
-            end_time: calculateEndTime(nowTime, duration),
+            start_time: futureTime,
+            end_time: calculateEndTime(futureTime, duration),
+            time_type: 'per_hour',
         }));
-        
-        _handleBookingClick(); 
+        _handleBookingClick();
     }, [_handleBookingClick, duration, setFormData]);
 
-    // Handle saat user memilih jam manual dari ClockTimePicker
+    useEffect(() => {
+        const isToday = selectedBookingDate === getTodayDateString();
+        if (!isModalOpen || !isToday || isTimeEdited) return;
+
+        const interval = setInterval(() => {
+            if (isDatePickerOpenRef.current) return;
+
+            const futureTime = getFutureTime(15);
+            setFormData(prev => ({
+                ...prev,
+                start_time: futureTime,
+                end_time: timeTypeRef.current === 'free_play' ? '' : calculateEndTime(futureTime, durationRef.current),
+            }));
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [isModalOpen, selectedBookingDate, isTimeEdited, setFormData]);
+
     const handleTimeChange = useCallback((newTime: string) => {
-        setIsTimeEdited(true); // Tandai bahwa user sudah interaksi pilih jam sendiri
+        setIsTimeEdited(true);
         setFormData(prev => ({
             ...prev,
             start_time: newTime,
-            end_time: calculateEndTime(newTime, duration),
+            end_time: timeType === 'free_play' ? '' : calculateEndTime(newTime, duration),
         }));
-    }, [duration, setFormData]);
+    }, [duration, timeType, setFormData]);
 
-    // Efek Ticking Clock: Update jam otomatis setiap 10 detik jika rute hari ini dan belum diedit manual
-    useEffect(() => {
-        if (!isModalOpen || selectedBookingDate !== getTodayDateString() || isTimeEdited) return;
-
-        const interval = setInterval(() => {
-            const nowTime = getCurrentTime();
-            setFormData(prev => ({
-                ...prev,
-                start_time: nowTime,
-                end_time: calculateEndTime(nowTime, duration),
-            }));
-        }, 10000); // interval 10 detik memastikan menit selalu up-to-date
-
-        return () => clearInterval(interval);
-    }, [isModalOpen, selectedBookingDate, isTimeEdited, duration, setFormData]);
-
-    // Hitung ulang end_time otomatis hanya saat durasi (Select Option) diubah oleh user
     useEffect(() => {
         if (formData.start_time) {
-            setFormData(prev => ({
-                ...prev,
-                end_time: calculateEndTime(prev.start_time, duration),
-            }));
+            setFormData(prev => {
+                const calculatedEnd = timeType === 'free_play' ? '' : calculateEndTime(prev.start_time, duration);
+                if (prev.end_time === calculatedEnd) return prev;
+                return { ...prev, end_time: calculatedEnd };
+            });
         }
-    }, [duration]);
+    }, [duration, timeType, formData.start_time, setFormData]);
 
-    // minTime: hanya batasi jika booking hari ini
     const minTime = getMinTime(selectedBookingDate);
 
     if (loading) {
@@ -148,8 +134,7 @@ export default function DeviceDetail() {
         <>
             <PageBreadcrumb
                 pageDescription='Lihat informasi detail sesi bermain'
-                items={[{ label: 'Perangkat', path: '/device' }, { label: 'Detail', path: `/device/${id}` }]}
-            />
+                items={[{ label: 'Perangkat', path: '/device' }, { label: 'Detail', path: `/device/${id}` }]} />
             <div className="min-h-screen bg-gray-50 py-10 dark:bg-gray-950">
                 <PageMeta title={`Detail ${device.name} - IZIREPS`} description={`Detail perangkat ${device.name}`} />
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
@@ -194,69 +179,94 @@ export default function DeviceDetail() {
 
                 {/* Booking Modal */}
                 <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Formulir Booking" size="md">
-                    {/* Style override global internal untuk memaksa semua modal popover jam berada di depan frame bootstrap/tailwind modal */}
-                    <style>{`
-                        .flatpickr-calendar, .clockpicker-popover, .rc-time-picker-panel, [role="dialog"] + div {
-                            z-index: 99999 !important;
-                        }
-                    `}</style>
-
-                    <div className="flex flex-col gap-4 p-1 sm:p-2">
+                    <div className="flex flex-col gap-3 p-1 sm:max-h-none pr-0.5">
                         {bookingError && (
-                            <div className="rounded-lg bg-error-50 p-3 text-sm text-error-600 dark:bg-error-500/10 dark:text-error-400">
+                            <div className="rounded-lg bg-error-50 p-2.5 text-xs text-error-600 dark:bg-error-500/10 dark:text-error-400">
                                 {bookingError}
                             </div>
                         )}
-                        
+
                         {/* Nama & WhatsApp */}
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="flex flex-col gap-1.5">
-                                <Label>Nama Pelanggan</Label>
-                                <InputField name="name" value={formData.name || ''} onChange={handleInputChange} required placeholder="Masukkan nama" className="w-full" />
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs sm:text-sm">Nama Pelanggan</Label>
+                                <InputField name="name" value={formData.name || ''} onChange={handleInputChange} required placeholder="Nama" className="w-full text-xs sm:text-sm h-9 sm:h-11 px-2.5" />
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label>No. WhatsApp</Label>
-                                <InputField type="text" name="phone" value={formData.phone || ''} onChange={handleInputChange} required placeholder="Contoh: 0812345678" className="w-full" />
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs sm:text-sm">No. WhatsApp</Label>
+                                <InputField type="text" name="phone" value={formData.phone || ''} onChange={handleInputChange} required placeholder="08123..." className="w-full text-xs sm:text-sm h-9 sm:h-11 px-2.5" />
                             </div>
                         </div>
 
-                        {/* Tanggal Bermain */}
-                        <div className="flex flex-col gap-1.5">
-                            <DatePicker
-                                key={`datepicker-${isModalOpen}-${formData.booking_date}`}
-                                id="booking-date-picker"
-                                label="Tanggal Bermain"
-                                minDate={new Date()}
-                                placeholder="Pilih tanggal"
-                                defaultDate={formData.booking_date || getTodayDateString()}
-                                onChange={(dates) => {
-                                    if (dates.length === 0) return;
-                                    const d = dates[0];
-                                    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                    setSelectedBookingDate(dateStr);
-                                    setFormData(p => ({ ...p, booking_date: dateStr }));
+                        {/* Tanggal Bermain & Tipe Waktu */}
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
+                            <div
+                                className="flex flex-col gap-1 relative z-[70]"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    isDatePickerOpenRef.current = true;
                                 }}
-                            />
+                                onFocus={() => {
+                                    isDatePickerOpenRef.current = true;
+                                }}
+                                onBlur={() => {
+                                    setTimeout(() => { isDatePickerOpenRef.current = false; }, 200);
+                                }}
+                                onMouseDown={(e) => e.stopPropagation()}>
+                                <DatePicker
+                                    id="booking-date-picker"
+                                    label="Tanggal Bermain"
+                                    minDate={getTodayDateString()}
+                                    placeholder="Pilih tgl"
+                                    value={formData.booking_date || getTodayDateString()}
+                                    onChange={(_, dateStr) => {
+                                        isDatePickerOpenRef.current = false;
+                                        if (!dateStr) return;
+
+                                        if (dateStr !== getTodayDateString()) {
+                                            setIsTimeEdited(false);
+                                        }
+
+                                        setSelectedBookingDate(dateStr);
+                                        setFormData(p => ({ ...p, booking_date: dateStr }));
+                                    }}
+                                />
+                            </div>
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs sm:text-sm">Tipe Waktu</Label>
+                                <Select
+                                    value={timeType}
+                                    onChange={(val) => { setTimeType(val); setFormData(prev => ({ ...prev, time_type: val })); }}
+                                    options={[
+                                        { value: 'per_hour', label: 'Per jam' },
+                                        { value: 'free_play', label: 'Bebas' }
+                                    ]}
+                                    placeholder="Tipe"
+                                    className="w-full text-xs sm:text-sm h-9 sm:h-11"
+                                />
+                            </div>
                         </div>
 
-                        {/* Durasi */}
-                        <div className="flex flex-col gap-1.5">
-                            <Label>Durasi Bermain</Label>
-                            <Select
-                                value={String(duration)}
-                                onChange={(val) => {
-                                    const newDur = Number(val);
-                                    setDuration(newDur);
-                                }}
-                                options={[1, 2, 3, 4, 5, 6].map(h => ({ value: String(h), label: `${h} jam` }))}
-                                placeholder="Pilih durasi"
-                                className="w-full"
-                            />
-                        </div>
+                        {/* Durasi Bermain */}
+                        {timeType === 'per_hour' && (
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs sm:text-sm">Durasi Bermain</Label>
+                                <Select
+                                    value={String(duration)}
+                                    onChange={(val) => {
+                                        const newDur = Number(val);
+                                        setDuration(newDur);
+                                    }}
+                                    options={[1, 2, 3, 4, 5, 6].map(h => ({ value: String(h), label: `${h} jam` }))}
+                                    placeholder="Pilih durasi"
+                                    className="w-full text-xs sm:text-sm h-9 sm:h-11"
+                                />
+                            </div>
+                        )}
 
                         {/* Jam Mulai & Selesai */}
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 relative">
-                            <div className="flex flex-col gap-1.5 relative z-[60]">
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-4 relative">
+                            <div className="flex flex-col gap-1 relative z-[65]">
                                 <ClockTimePicker
                                     id="start_time"
                                     label="Jam Mulai"
@@ -265,30 +275,32 @@ export default function DeviceDetail() {
                                     minTime={minTime}
                                 />
                             </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label>Jam Selesai (by system)</Label>
-                                <div className="h-11 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-mono text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 select-none w-full">
-                                    {formData.end_time || (
-                                        <span className="text-gray-400 dark:text-gray-500">Otomatis</span>
+                            <div className="flex flex-col gap-1">
+                                <Label className="text-xs sm:text-sm">Jam Selesai</Label>
+                                <div className="h-9 sm:h-11 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs sm:text-sm font-mono text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 select-none w-full truncate">
+                                    {timeType === 'free_play' ? (
+                                        <span className="text-warning-500 italic text-[11px] sm:text-sm">Bebas</span>
+                                    ) : (
+                                        formData.end_time || <span className="text-gray-400 dark:text-gray-500">Otomatis</span>
                                     )}
                                 </div>
                             </div>
                         </div>
 
                         {/* Bukti Transfer */}
-                        <div className="flex flex-col gap-1.5">
-                            <Label>Bukti Transfer DP (Max 2MB)</Label>
-                            <FileInput onChange={(e) => setDpProof(e.target.files?.[0] || null)} className="w-full" />
-                            <p className="mt-0.5 text-xs text-gray-500">Format: JPG, PNG, PDF</p>
+                        <div className="flex flex-col gap-1">
+                            <Label className="text-xs sm:text-sm">Bukti Transfer DP (Max 2MB)</Label>
+                            <FileInput onChange={(e) => setDpProof(e.target.files?.[0] || null)} className="w-full text-xs sm:text-sm" />
+                            <p className="mt-0.5 text-[10px] sm:text-xs text-gray-500">Format: JPG, PNG, PDF</p>
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="mt-4 flex justify-end gap-3 border-t border-gray-200 pt-4 dark:border-gray-800">
-                            <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 w-1/2 sm:w-auto">
+                        <div className="mt-2 flex gap-2 border-t border-gray-200 pt-3 dark:border-gray-800 sm:justify-end">
+                            <button type="button" onClick={() => setIsModalOpen(false)} className="rounded-lg border border-gray-200 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 w-1/2 sm:w-auto transition-colors">
                                 Batal
                             </button>
-                            <button type="button" onClick={handleBookingSubmit} disabled={isSubmitting} className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 w-1/2 sm:w-auto">
-                                {isSubmitting && <Loader2 size={16} className="animate-spin" />}
+                            <button type="button" onClick={handleBookingSubmit} disabled={isSubmitting} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-500 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 w-1/2 sm:w-auto transition-colors">
+                                {isSubmitting && <Loader2 size={14} className="animate-spin" />}
                                 {isSubmitting ? 'Mengirim...' : 'Kirim Booking'}
                             </button>
                         </div>

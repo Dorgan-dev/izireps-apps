@@ -1,30 +1,58 @@
 import { useEffect, useState } from 'react';
 import { bookingsApi } from '../../services/api';
 import type { Booking } from '../../types';
-import { formatRupiah } from '../../components/ui/badge/Badge';
 import { Button, Field } from '../../components/ui/Form';
 import Textarea from '../../components/form/input/TextArea';
+import Select from '../../components/form/Select';
 import Modal from '../../components/ui/modal';
-import { EmptyState } from '../../components/common';
-import { Check, X } from 'lucide-react';
+import { EmptyState, Spinner } from '../../components/common';
+import BookingItems from '../../components/cashier/BookingItems';
 import PageBreadcrumb from '../../components/common/PageBreadCrumb';
 import ComponentCard from '../../components/common/ComponentCard';
+import { useAuthStore } from '../../store/authStore';
 
 export default function CashierBookings() {
+  const { user } = useAuthStore();
+  const cashierId = user?.id;
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [statusFilter, setStatus] = useState('pending');
+  const [page, setPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [actionModal, setActionModal] = useState<{ type: 'confirm' | 'reject'; booking: Booking } | null>(null);
   const [reason, setReason] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const load = () => {
+  const load = (status: string, currentPage: number) => {
     setIsLoading(true);
-    bookingsApi.list({ status: 'pending' })
-      .then((res) => setBookings(res.data.data))
+    bookingsApi
+      .list({
+        status: status || undefined,
+        page: currentPage,
+        ...(cashierId ? { cashier_id: cashierId } : {}),
+      } as any)
+      .then((res) => {
+        const d = res.data as any;
+        // Mendukung respons paginasi maupun array biasa
+        if (d?.data && Array.isArray(d.data)) {
+          setBookings(d.data);
+          setLastPage(d.last_page ?? 1);
+          setTotal(d.total ?? d.data.length);
+        } else if (Array.isArray(d)) {
+          setBookings(d);
+          setLastPage(1);
+          setTotal(d.length);
+        } else {
+          setBookings([]);
+        }
+      })
+      .catch(() => setBookings([]))
       .finally(() => setIsLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(statusFilter, page); }, [statusFilter, page, cashierId]);
 
   const handleAction = async () => {
     if (!actionModal) return;
@@ -48,7 +76,7 @@ export default function CashierBookings() {
       }
       setActionModal(null);
       setReason('');
-      load();
+      load(statusFilter || 'all', page);
     } catch (error: any) {
       console.error("Backend Reject Error:", error.response?.data);
     } finally {
@@ -56,75 +84,87 @@ export default function CashierBookings() {
     }
   };
 
-  // 💡 PERBAIKAN 1: Hapus pengecekan `if (!load?.length)` yang merusak flow di sini.
-
   return (
     <>
-      <PageBreadcrumb 
-        items={[{ label: 'Booking', path: '/cashier/bookings' }]} 
-        pageDescription='Pelanggan yang booking akan tercatat di sini' 
+      <PageBreadcrumb
+        items={[{ label: 'Booking', path: '/cashier/bookings' }]}
+        pageDescription='Pelanggan yang booking akan tercatat di sini'
       />
-      
-      <ComponentCard title="Daftar Booking">
-        {isLoading ? (
-          <div className="space-y-3">
-            {[...Array(4)].map((_, i) => <div key={i} className="h-24 bg-gray-900 rounded-xl animate-pulse" />)}
+
+      <ComponentCard
+        title="Daftar booking"
+        headerAction={
+          <div className="flex items-center gap-3">
+            {total > 0 && (
+              <span className="text-xs text-gray-400 dark:text-gray-500 hidden sm:block">
+                {total} booking
+              </span>
+            )}
+            <div className="w-36">
+              <Select defaultValue='pending'
+                placeholder="Status"
+                options={[
+                  { label: 'Menunggu', value: 'pending' },
+                  { label: 'Diterima', value: 'confirmed' },
+                  { label: 'Ditolak', value: 'rejected' },
+                  { label: 'Selesai', value: 'completed' },
+                  { label: 'Kadaluwarsa', value: 'expired' },
+                ]}
+                value={statusFilter}
+                onChange={(val) => { setStatus(val); setPage(1); }}
+              />
+            </div>
           </div>
+        }
+      >
+        {isLoading ? (
+          <Spinner className="py-16" />
         ) : bookings.length === 0 ? (
           <EmptyState
-            icon=""
+            icon="📋"
             title="Tidak ada data booking"
-            description="Data booking akan muncul di sini ketika ada pelanggan yang melakukan booking"
+            description={statusFilter
+              ? `Tidak ada booking berstatus "${statusFilter}" saat ini`
+              : 'Data booking akan muncul di sini ketika ada pelanggan yang melakukan booking'
+            }
           />
         ) : (
-          /* Daftar Booking */
           <div className="space-y-3">
             {bookings.map((b) => (
-              <div key={b.id} className="bg-gray-900 border border-yellow-900/50 rounded-xl p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold text-white">{b.customer?.name ?? 'Pelanggan'}</p>
-                    <p className="text-sm text-gray-400 mt-0.5">{b.customer?.phone}</p>
-                    <div className="flex gap-4 mt-3 text-sm text-gray-400">
-                      <span>{b.device?.name}</span>
-                      <span>·</span>
-                      <span>{b.booking_date} · {b.start_time}–{b.end_time}</span>
-                      <span>·</span>
-                      <span className="text-gray-300 font-medium">DP {formatRupiah(b.dp_amount)}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => setActionModal({ type: 'reject', booking: b })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-900/30 text-red-400 hover:bg-red-900/50 text-xs font-medium transition-colors"
-                    >
-                      <X size={13} /> Tolak
-                    </button>
-                    <button
-                      onClick={() => setActionModal({ type: 'confirm', booking: b })}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 text-white hover:bg-emerald-600 text-xs font-medium transition-colors"
-                    >
-                      <Check size={13} /> Konfirmasi
-                    </button>
-                  </div>
-                </div>
-
-                {b.dp_proof_file && (
-                  <a
-                    href={b.dp_proof_file}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-3 inline-block text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-                  >
-                    Lihat Bukti Transfer →
-                  </a>
-                )}
-              </div>
+              <BookingItems
+                key={b.id}
+                booking={b}
+                onReject={(booking) => setActionModal({ type: 'reject', booking })}
+                onConfirm={(booking) => setActionModal({ type: 'confirm', booking })}
+              />
             ))}
+
+            {/* Pagination */}
+            {lastPage > 1 && (
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="px-3 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  ← Sebelumnya
+                </button>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Hal. {page} / {lastPage}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(lastPage, p + 1))}
+                  disabled={page === lastPage}
+                  className="px-3 py-1.5 text-sm font-medium border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg disabled:opacity-40 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  Berikutnya →
+                </button>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Confirm / Reject modal */}
+        {/* Modal Konfirmasi / Tolak */}
         <Modal
           isOpen={!!actionModal}
           onClose={() => { setActionModal(null); setReason(''); }}

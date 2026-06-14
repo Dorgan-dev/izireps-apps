@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { sessionsApi, bookingsApi } from '../../services/api'
 import { PlaySession, Booking } from '../../types'
 import Modal from '../../components/ui/modal';
-import { Spinner, Button } from '../../components/common'
+import { Spinner} from '../../components/common'
+import Button from '../../components/ui/button/Button'
 import toast from 'react-hot-toast'
 import ComponentCard from '../../components/common/ComponentCard'
 import PageBreadcrumb from '../../components/common/PageBreadCrumb'
@@ -44,7 +45,19 @@ export function PlaySessionsPage() {
   todayDate.setMinutes(todayDate.getMinutes() - todayDate.getTimezoneOffset());
   const todayDateStr = todayDate.toISOString().split('T')[0];
 
-  const waitings = (rawBookings ?? []).filter(b => b.booking_date?.split('T')[0] === todayDateStr);
+  const waitings = (rawBookings ?? []).filter(b => {
+    if (!b.booking_date) return false;
+
+    // 1. Ubah string UTC dari DB menjadi objek Date JavaScript
+    const dbDate = new Date(b.booking_date);
+
+    // 2. Format menjadi string lokal (YYYY-MM-DD)
+    const localDbDate = new Date(dbDate.getTime() - dbDate.getTimezoneOffset() * 60000);
+    const localDbDateStr = localDbDate.toISOString().split('T')[0];
+
+    // 3. Cocokkan tanggalnya
+    return localDbDateStr === todayDateStr;
+  });
 
   const startBookingMutation = useMutation({
     mutationFn: (bookingId: number) => sessionsApi.startFromBooking(bookingId),
@@ -62,7 +75,7 @@ export function PlaySessionsPage() {
   return (
     <><PageBreadcrumb items={[{ label: 'Sesi bermain', path: '/cashier/sessions' }]} pageDescription='Pelanggan yang sedang bermain akan tercatat dalam sesi' />
       <ComponentCard title='Daftar sesi aktif' headerAction={
-        <Button size='sm' variant="primary" onClick={() => setShowNew(true)}>
+        <Button size='md' onClick={() => setShowNew(true)}>
           + Sesi baru
         </Button>
       }>

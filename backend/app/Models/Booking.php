@@ -25,6 +25,7 @@ class Booking extends Model
         'estimated_cost',
         'dp_amount',
         'dp_proof_file',
+        'time_type',
         'status',
         'cancel_reason',
         'cancelled_by',
@@ -35,7 +36,7 @@ class Booking extends Model
     protected $casts = [
         'status'         => BookingStatus::class,
         'cancelled_by'   => BookingCancelledBy::class,
-        'booking_date'   => 'date',
+        'booking_date'   => 'date:Y-m-d',
         'estimated_cost' => 'decimal:2',
         'dp_amount'      => 'decimal:2',
         'verified_at'    => 'datetime',

@@ -23,52 +23,53 @@ class SessionService
 {
     // ── Mulai sesi walk-in ────────────────────────────────────────────────────
     // @param array $data {
-    //   session_type: 'per_jam'|'bebas'
-    //   duration_minutes: int   (wajib jika per_jam, minimal 60)
+    //   session_type: 'per_hour'|'bebas'
+    //   duration_minutes: int   (wajib jika per_hour, minimal 60)
     //   customer: { name?: string, phone?: string }
     //   fnb_items: [{ fnb_item_id: int, quantity: int }]
     // }
     public function startWalkIn(Device $device, User $cashier, array $data): PlaySession
     {
         return DB::transaction(function () use ($device, $cashier, $data) {
-            $sessionType = SessionType::from($data['session_type'] ?? 'bebas');
+            $sessionType = SessionType::from($data['session_type'] ?? 'free_play');
 
             $customer = null;
-            if (! empty($data['customer']['phone'])) {
+            if (!empty($data['customer']['phone'])) {
                 $customer = Customer::firstOrCreate(
                     ['phone' => $data['customer']['phone']],
-                    ['name'  => $data['customer']['name'] ?? 'Walk-in']
+                    ['name' => $data['customer']['name'] ?? 'Walk-in']
                 );
             }
 
             $plannedEndAt = null;
             if ($sessionType === SessionType::PerJam) {
                 abort_unless(
-                    ! empty($data['duration_minutes']) && $data['duration_minutes'] >= 60,
-                    422, 'Mode per jam membutuhkan durasi minimal 60 menit.'
+                    !empty($data['duration_minutes']) && $data['duration_minutes'] >= 60,
+                    422,
+                    'Mode per jam membutuhkan durasi minimal 60 menit.'
                 );
                 $plannedEndAt = now()->addMinutes((int) $data['duration_minutes']);
             }
 
             $session = PlaySession::create([
-                'device_id'      => $device->id,
-                'customer_id'    => $customer?->id,
-                'cashier_id'     => $cashier->id,
-                'started_at'     => now(),
-                'session_type'   => $sessionType,
+                'device_id' => $device->id,
+                'customer_id' => $customer?->id,
+                'cashier_id' => $cashier->id,
+                'started_at' => now(),
+                'session_type' => $sessionType,
                 'planned_end_at' => $plannedEndAt,
-                'extend_count'   => 0,
-                'status'         => SessionStatus::Active,
+                'extend_count' => 0,
+                'status' => SessionStatus::Active,
             ]);
 
             $transaction = Transaction::create([
-                'session_id'     => $session->id,
-                'cashier_id'     => $cashier->id,
+                'session_id' => $session->id,
+                'cashier_id' => $cashier->id,
                 'invoice_number' => Transaction::generateInvoiceNumber(),
-                'status'         => TransactionStatus::Pending,
+                'status' => TransactionStatus::Pending,
             ]);
 
-            if (! empty($data['fnb_items'])) {
+            if (!empty($data['fnb_items'])) {
                 $this->recordFnbItems($transaction, $data['fnb_items']);
             }
 
@@ -78,7 +79,7 @@ class SessionService
         });
     }
 
-    // ── Mulai sesi dari booking (selalu per_jam) ──────────────────────────────
+    // ── Mulai sesi dari booking (selalu per_hour) ──────────────────────────────
     public function startFromBooking(Booking $booking, User $cashier): PlaySession
     {
         return DB::transaction(function () use ($booking, $cashier) {
@@ -87,28 +88,31 @@ class SessionService
             );
 
             $session = PlaySession::create([
-                'device_id'      => $booking->device_id,
-                'customer_id'    => $booking->customer_id,
-                'booking_id'     => $booking->id,
-                'cashier_id'     => $cashier->id,
-                'started_at'     => now(),
-                'session_type'   => SessionType::PerJam,
+                'device_id' => $booking->device_id,
+                'customer_id' => $booking->customer_id,
+                'booking_id' => $booking->id,
+                'cashier_id' => $cashier->id,
+                'started_at' => now(),
+                'session_type' => SessionType::PerJam,
                 'planned_end_at' => $scheduledEnd,
-                'extend_count'   => 0,
-                'status'         => SessionStatus::Active,
+                'extend_count' => 0,
+                'status' => SessionStatus::Active,
             ]);
 
             Transaction::create([
-                'session_id'     => $session->id,
-                'cashier_id'     => $cashier->id,
+                'session_id' => $session->id,
+                'cashier_id' => $cashier->id,
                 'invoice_number' => Transaction::generateInvoiceNumber(),
-                'dp_paid'        => $booking->dp_amount,
-                'status'         => TransactionStatus::Pending,
+                'dp_paid' => $booking->dp_amount,
+                'status' => TransactionStatus::Pending,
             ]);
 
             $booking->update(['status' => BookingStatus::InUse]);
             $this->updateDeviceStatus(
-                $booking->device, DeviceStatus::InUse, $cashier, 'Sesi booking dimulai'
+                $booking->device,
+                DeviceStatus::InUse,
+                $cashier,
+                'Sesi booking dimulai'
             );
 
             return $session->load(['device', 'customer', 'booking', 'transaction']);
@@ -133,12 +137,13 @@ class SessionService
         abort_unless($additionalMinutes % 15 === 0, 422, 'Penambahan waktu harus kelipatan 15 menit.');
         abort_unless(
             $additionalMinutes >= 15 && $additionalMinutes <= 180,
-            422, 'Penambahan waktu antara 15-180 menit.'
+            422,
+            'Penambahan waktu antara 15-180 menit.'
         );
 
         $updates = [
             'extend_count' => $session->extend_count + 1,
-            'status'       => SessionStatus::Active,
+            'status' => SessionStatus::Active,
         ];
 
         if ($session->isPerJam()) {
@@ -158,7 +163,7 @@ class SessionService
     public function markTimeUp(PlaySession $session): void
     {
         abort_unless($session->status === SessionStatus::Active, 422, 'Sesi tidak aktif.');
-        abort_unless($session->isPerJam(), 422, 'Hanya sesi per_jam yang bisa time_up.');
+        abort_unless($session->isPerJam(), 422, 'Hanya sesi per_hour yang bisa time_up.');
 
         $session->update(['status' => SessionStatus::TimeUp]);
         // TV dimatikan via STB dari command terpisah (STBService)
@@ -170,35 +175,35 @@ class SessionService
         abort_unless($session->status->isOpen(), 422, 'Sesi tidak bisa di-checkout.');
 
         return DB::transaction(function () use ($session, $paymentData, $cashier) {
-            $endedAt         = now();
+            $endedAt = now();
             $durationMinutes = (int) Carbon::parse($session->started_at)->diffInMinutes($endedAt);
-            $gamingCost      = $session->calculateGamingCost($durationMinutes);
+            $gamingCost = $session->calculateGamingCost($durationMinutes);
 
             $session->update([
-                'ended_at'         => $endedAt,
+                'ended_at' => $endedAt,
                 'duration_minutes' => $durationMinutes,
-                'gaming_cost'      => $gamingCost,
-                'status'           => SessionStatus::Completed,
+                'gaming_cost' => $gamingCost,
+                'status' => SessionStatus::Completed,
             ]);
 
             $transaction = $session->transaction;
-            $fnbTotal    = $transaction->fnb_total;
-            $grandTotal  = $gamingCost + $fnbTotal;
-            $dpPaid      = $transaction->dp_paid;
-            $remaining   = max(0, $grandTotal - $dpPaid);
-            $amountPaid  = $paymentData['amount_paid'];
-            $change      = max(0, $amountPaid - $remaining);
+            $fnbTotal = $transaction->fnb_total;
+            $grandTotal = $gamingCost + $fnbTotal;
+            $dpPaid = $transaction->dp_paid;
+            $remaining = max(0, $grandTotal - $dpPaid);
+            $amountPaid = $paymentData['amount_paid'];
+            $change = max(0, $amountPaid - $remaining);
 
             $transaction->update([
-                'cashier_id'       => $cashier->id,
-                'gaming_total'     => $gamingCost,
-                'grand_total'      => $grandTotal,
+                'cashier_id' => $cashier->id,
+                'gaming_total' => $gamingCost,
+                'grand_total' => $grandTotal,
                 'remaining_amount' => $remaining,
-                'amount_paid'      => $amountPaid,
-                'change_amount'    => $change,
-                'payment_method'   => $paymentData['payment_method'],
-                'status'           => TransactionStatus::Paid,
-                'paid_at'          => now(),
+                'amount_paid' => $amountPaid,
+                'change_amount' => $change,
+                'payment_method' => $paymentData['payment_method'],
+                'status' => TransactionStatus::Paid,
+                'paid_at' => now(),
             ]);
 
             if ($session->booking_id) {
@@ -206,7 +211,10 @@ class SessionService
             }
 
             $this->updateDeviceStatus(
-                $session->device, DeviceStatus::Available, $cashier, 'Sesi selesai - checkout'
+                $session->device,
+                DeviceStatus::Available,
+                $cashier,
+                'Sesi selesai - checkout'
             );
 
             return $transaction->fresh(['items', 'session.device', 'session.customer']);
@@ -224,18 +232,19 @@ class SessionService
             abort_unless($fnbItem->isInStock(), 422, "Stok {$fnbItem->name} habis.");
             abort_unless(
                 $fnbItem->stock >= $item['quantity'],
-                422, "Stok {$fnbItem->name} tidak cukup (tersisa {$fnbItem->stock})."
+                422,
+                "Stok {$fnbItem->name} tidak cukup (tersisa {$fnbItem->stock})."
             );
 
             $subtotal = $fnbItem->price * $item['quantity'];
 
             TransactionItem::create([
                 'transaction_id' => $transaction->id,
-                'fnb_item_id'    => $fnbItem->id,
-                'item_name'      => $fnbItem->name,
-                'quantity'       => $item['quantity'],
-                'unit_price'     => $fnbItem->price,
-                'subtotal'       => $subtotal,
+                'fnb_item_id' => $fnbItem->id,
+                'item_name' => $fnbItem->name,
+                'quantity' => $item['quantity'],
+                'unit_price' => $fnbItem->price,
+                'subtotal' => $subtotal,
             ]);
 
             $fnbItem->decrement('stock', $item['quantity']);
@@ -262,12 +271,12 @@ class SessionService
         $device->update(['status' => $newStatus]);
 
         DeviceLog::create([
-            'device_id'   => $device->id,
-            'actor_id'    => $actor?->id,
+            'device_id' => $device->id,
+            'actor_id' => $actor?->id,
             'from_status' => $oldStatus,
-            'to_status'   => $newStatus,
-            'note'        => $note,
-            'changed_at'  => now(),
+            'to_status' => $newStatus,
+            'note' => $note,
+            'changed_at' => now(),
         ]);
     }
 }

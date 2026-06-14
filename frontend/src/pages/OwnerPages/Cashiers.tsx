@@ -86,15 +86,12 @@ export default function OwnerCashiers() {
       />
 
       <div className="space-y-6">
-        <ComponentCard title="Daftar Kasir">
-          {/* Header Action */}
-          <div className="mb-5 flex items-center justify-end">
-            <Button size="sm" onClick={openAdd}>
+        <ComponentCard title="Daftar Kasir" headerAction={<>
+            <Button size="md" onClick={openAdd}>
               <UserPlus size={16} />
               Tambah Kasir
             </Button>
-          </div>
-
+        </>}>
           {/* Loading */}
           {isLoading ? (
             <div className="flex items-center justify-center py-20">

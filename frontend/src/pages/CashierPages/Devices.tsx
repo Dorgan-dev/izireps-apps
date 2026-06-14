@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Device } from '../../types'
@@ -7,62 +7,30 @@ import {
   deviceStatusLabel, deviceStatusBadge, deviceStatusCard,
   formatRupiah, formatDuration, getElapsedMinutes,
 } from '../../utils'
-import { Button, Modal, Field, Input, ConfirmDialog } from '../../components/common'
+import { Button, ConfirmDialog } from '../../components/common'
+import PageBreadcrumb from '../../components/common/PageBreadCrumb'
+import ComponentCard from '../../components/common/ComponentCard'
+import Select from '../../components/form/Select'
 
+// 1. Perbaikan SessionTimer menggunakan useEffect agar tidak leak memory
 function SessionTimer({ startedAt }: { startedAt: string }) {
   const [elapsed, setElapsed] = useState(getElapsedMinutes(startedAt))
-  useState(() => {
-    const id = setInterval(() => setElapsed(getElapsedMinutes(startedAt)), 30_000)
+
+  useEffect(() => {
+    // Reset elapsed saat startedAt berubah
+    setElapsed(getElapsedMinutes(startedAt))
+
+    const id = setInterval(() => {
+      setElapsed(getElapsedMinutes(startedAt))
+    }, 30_000)
+
     return () => clearInterval(id)
-  })
+  }, [startedAt])
+
   return (
     <p className="text-sm font-medium text-amber-700 tabular-nums">
       {formatDuration(elapsed)}
     </p>
-  )
-}
-
-function StartWalkInModal({ device, onClose }: { device: Device; onClose: () => void }) {
-  const qc = useQueryClient()
-  const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [phone, setPhone] = useState('')
-
-  const mutation = useMutation({
-    mutationFn: () =>
-      sessionApi.startWalkIn(device.id, name || phone ? { name, phone } : undefined),
-    onSuccess: res => {
-      qc.invalidateQueries({ queryKey: ['devices'] })
-      qc.invalidateQueries({ queryKey: ['sessions'] })
-      onClose()
-      // ⚠️ SESUAIKAN: pastikan route /cashier/sessions/:id ada di router
-      navigate(`/cashier/sessions/${res.data.data.id}`)
-    },
-  })
-
-  return (
-    <div className="flex flex-col gap-4">
-      <p className="text-sm text-gray-500">
-        Data pelanggan opsional. Isi jika ingin simpan riwayat pelanggan.
-      </p>
-      <Field label="Nama pelanggan (opsional)">
-        <Input value={name} onChange={e => setName(e.target.value)} placeholder="cth. Budi Santoso" />
-      </Field>
-      <Field label="Nomor HP (opsional)">
-        <Input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="cth. 0812xxxx" />
-      </Field>
-      {device.current_rate && (
-        <div className="bg-gray-50 rounded-xl px-4 py-3 text-sm text-gray-600">
-          Tarif aktif: <span className="font-medium">{formatRupiah(device.current_rate.price_per_hour)}</span> / jam
-        </div>
-      )}
-      <div className="flex gap-3 justify-end pt-1 border-t border-gray-100">
-        <Button variant="secondary" onClick={onClose}>Batal</Button>
-        <Button variant="primary" loading={mutation.isPending} onClick={() => mutation.mutate()}>
-          ▶ Mulai sesi
-        </Button>
-      </div>
-    </div>
   )
 }
 
@@ -85,7 +53,10 @@ function DeviceCard({
         device.status === 'maintenance' ? 'available' : 'maintenance',
         device.status === 'maintenance' ? 'Selesai perbaikan' : 'Ditandai dalam perbaikan'
       ),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['devices'] }); setShowMaint(false) },
+    onSuccess: () => { 
+      qc.invalidateQueries({ queryKey: ['devices'] })
+      setShowMaint(false) 
+    },
   })
 
   return (
@@ -100,39 +71,14 @@ function DeviceCard({
         </span>
       </div>
 
-      {device.status === 'available' && device.current_rate && (
-        <p className="text-xs text-gray-500">{formatRupiah(device.current_rate.price_per_hour)} / jam</p>
-      )}
-      {device.status === 'in_use' && activeSession && (
-        <div className="bg-white/70 rounded-xl px-3 py-2">
-          <p className="text-xs text-gray-500 mb-0.5">Durasi bermain</p>
-          <SessionTimer startedAt={activeSession.started_at} />
-        </div>
-      )}
-      {device.status === 'booked' && (
-        <div className="bg-white/70 rounded-xl px-3 py-2">
-          <p className="text-xs text-blue-600 font-medium">Ada booking aktif</p>
-        </div>
-      )}
-      {device.status === 'maintenance' && (
-        <div className="bg-white/70 rounded-xl px-3 py-2">
-          <p className="text-xs text-red-500">Perangkat dalam perbaikan</p>
-        </div>
-      )}
 
       <div className="flex flex-col gap-1.5 mt-auto">
         {device.status === 'available' && (
-          <>
-            <Button size="sm" variant="primary" className="w-full" onClick={() => setShowStart(true)}>
-              ▶ Mulai sesi
-            </Button>
-            <Button size="sm" variant="danger" className="w-full" onClick={() => setShowMaint(true)}>
-              Tandai perbaikan
-            </Button>
-          </>
+          <Button size="sm" variant="danger" className="w-full" onClick={() => setShowMaint(true)}>
+            Tandai perbaikan
+          </Button>
         )}
         {device.status === 'in_use' && activeSession && (
-          // ⚠️ SESUAIKAN: route sesi aktif
           <Button size="sm" variant="secondary" className="w-full"
             onClick={() => navigate(`/cashier/sessions/${activeSession.id}`)}>
             Lihat sesi aktif →
@@ -150,10 +96,6 @@ function DeviceCard({
         )}
       </div>
 
-      <Modal open={showStart} onClose={() => setShowStart(false)} title={`Mulai sesi — ${device.name}`}>
-        <StartWalkInModal device={device} onClose={() => setShowStart(false)} />
-      </Modal>
-
       <ConfirmDialog
         open={showMaint}
         onClose={() => setShowMaint(false)}
@@ -170,10 +112,6 @@ function DeviceCard({
   )
 }
 
-// ─── Komponen utama ───────────────────────────────────────────────────────────
-// ⚠️ SESUAIKAN:
-//   - GET /api/devices            → endpoint list perangkat
-//   - GET /api/sessions?status=active → endpoint sesi aktif
 export default function DeviceGrid() {
   const [filter, setFilter] = useState<string>('all')
 
@@ -197,6 +135,7 @@ export default function DeviceGrid() {
 
   const all = devices ?? []
   const filtered = filter === 'all' ? all : all.filter(d => d.status === filter)
+  
   const counts = {
     all: all.length,
     available: all.filter(d => d.status === 'available').length,
@@ -214,28 +153,46 @@ export default function DeviceGrid() {
   )
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-2 flex-wrap">
-        {(['all', 'available', 'in_use', 'booked', 'maintenance'] as const).map(s => (
-          <button key={s} onClick={() => setFilter(s)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${filter === s ? 'bg-gray-900 text-white border-gray-900'
-              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-              }`}>
-            {s === 'all' ? 'Semua' : deviceStatusLabel[s]} ({counts[s]})
-          </button>
-        ))}
-      </div>
-
-      {!filtered.length ? (
-        <div className="py-16 text-center text-gray-400 text-sm">Tidak ada perangkat</div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(device => (
-            <DeviceCard key={device.id} device={device}
-              activeSession={sessionByDevice[device.id] ?? null} />
-          ))}
+    <>
+      <PageBreadcrumb pageDescription="Daftar semua perangkat" items={[{ label: 'Perangkat', path: '/devices' }]} />
+      
+      <ComponentCard 
+        title="Daftar perangkat" 
+        headerAction={
+          <div className="flex gap-3 flex-wrap items-center">
+            {/* 2. Perbaikan Select: dihubungkan dengan state 'filter' yang benar */}
+            <Select 
+              className="w-44" defaultValue='all'
+              placeholder='Filter Status'
+              options={[
+                { label: 'Semua status', value: 'all' },
+                { label: 'Tersedia', value: 'available' },
+                { label: 'Digunakan', value: 'in_use' },
+                { label: 'Dibooking', value: 'booked' },
+                { label: 'Perbaikan', value: 'maintenance' },
+              ]}
+              value={filter}
+              onChange={e => setFilter(e)} // Sesuaikan e.target.value tergantung handler komponen Select Anda
+            />
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          {!filtered.length ? (
+            <div className="py-16 text-center text-gray-400 text-sm">Tidak ada perangkat</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {filtered.map(device => (
+                <DeviceCard 
+                  key={device.id} 
+                  device={device}
+                  activeSession={sessionByDevice[device.id] ?? null} 
+                />
+              ))}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </ComponentCard>
+    </>
   )
 }

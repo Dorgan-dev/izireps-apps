@@ -7,16 +7,16 @@ namespace App\Enums;
 
 enum SessionStatus: string
 {
-    case Active    = 'active';
-    case TimeUp    = 'time_up';   // khusus per_jam: waktu habis, TV mati, belum checkout
+    case Active = 'active';
+    case TimeUp = 'time_up';   // khusus per_hour: waktu habis, TV mati, belum checkout
     case Completed = 'completed';
     case Cancelled = 'cancelled';
 
     public function label(): string
     {
-        return match($this) {
-            self::Active    => 'Aktif',
-            self::TimeUp    => 'Waktu Habis',
+        return match ($this) {
+            self::Active => 'Aktif',
+            self::TimeUp => 'Waktu Habis',
             self::Completed => 'Selesai',
             self::Cancelled => 'Dibatalkan',
         };
@@ -24,9 +24,9 @@ enum SessionStatus: string
 
     public function color(): string
     {
-        return match($this) {
-            self::Active    => 'amber',
-            self::TimeUp    => 'red',
+        return match ($this) {
+            self::Active => 'amber',
+            self::TimeUp => 'red',
             self::Completed => 'green',
             self::Cancelled => 'gray',
         };

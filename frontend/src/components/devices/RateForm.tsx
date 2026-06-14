@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { DeviceRate } from '../../types'
-import api from '../../api'
+import { devicesApi } from '../../services/api'
 import { Button, Field, Input } from '../ui/Form'
 
 interface RateFormProps {
@@ -18,19 +18,20 @@ export function RateForm({ deviceId, rate, onClose, onSuccess }: RateFormProps) 
   const [effectiveUntil, setEffectiveUntil] = useState(rate?.effective_until?.slice(0, 5) ?? '')
   const [isDefault, setIsDefault] = useState(!rate?.effective_from)
 
-  const mutation = useMutation({
-    mutationFn: () => {
-      const data = {
-        price_per_hour: Number(pricePerHour),
-        effective_from: isDefault ? null : effectiveFrom || null,
-        effective_until: isDefault ? null : effectiveUntil || null,
-      }
-      return isEdit
-        ? api.put(`/rates/${rate!.id}`, data)
-        : api.post(`/devices/${deviceId}/rates`, data)
-    },
-    onSuccess,
-  })
+const mutation = useMutation({
+  mutationFn: () => {
+    const data = {
+      price_per_hour: Number(pricePerHour),
+      effective_from: isDefault ? null : effectiveFrom || null,
+      effective_until: isDefault ? null : effectiveUntil || null,
+    }
+
+    return isEdit
+      ? devicesApi.updateRate(rate!.id, data)
+      : devicesApi.setRate(deviceId, data)
+  },
+  onSuccess,
+})
 
   return (
     <div className="flex flex-col gap-4">

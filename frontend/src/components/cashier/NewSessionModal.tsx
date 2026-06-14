@@ -16,7 +16,7 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
   const navigate = useNavigate()
 
   const [deviceId, setDeviceId] = useState('')
-  const [sessionType, setSessionType] = useState<'per_jam' | 'bebas'>('bebas')
+  const [sessionType, setSessionType] = useState<'per_hour' | 'free_play'>('free_play')
   const [hours, setHours] = useState('1')
   const [minutes, setMinutes] = useState('0')
   const [custName, setCustName] = useState('')
@@ -54,7 +54,7 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
     mutationFn: () => sessionApi.startWalkIn({
       device_id: Number(deviceId),
       session_type: sessionType,
-      duration_minutes: sessionType === 'per_jam' ? totalDurationMin : undefined,
+      duration_minutes: sessionType === 'per_hour' ? totalDurationMin : undefined,
       customer: custName || custPhone ? { name: custName, phone: custPhone } : undefined,
       fnb_items: Object.entries(cart).filter(([, q]) => q > 0)
         .map(([id, quantity]) => ({ fnb_item_id: Number(id), quantity })),
@@ -107,8 +107,8 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
             <Field label="Jenis waktu bermain">
               <div className="grid grid-cols-2 gap-3">
                 {([
-                  { value: 'bebas', label: 'Bebas', desc: 'Tidak ada batas waktu' },
-                  { value: 'per_jam', label: 'Per Jam', desc: 'Tentukan durasi di awal' },
+                  { value: 'free_play', label: 'Bebas', desc: 'Tidak ada batas waktu' },
+                  { value: 'per_hour', label: 'Per Jam', desc: 'Tentukan durasi di awal' },
                 ] as const).map(opt => (
                   <button
                     key={opt.value}
@@ -125,8 +125,8 @@ export default function NewSessionModal({ onClose }: { onClose: () => void }) {
               </div>
             </Field>
 
-            {/* Input durasi jika per_jam */}
-            {sessionType === 'per_jam' && (
+            {/* Input durasi jika per_hour */}
+            {sessionType === 'per_hour' && (
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex flex-col gap-3">
                 <p className="text-xs font-medium text-blue-700">Tentukan durasi bermain (minimal 1 jam)</p>
                 <Field label="Jam">
