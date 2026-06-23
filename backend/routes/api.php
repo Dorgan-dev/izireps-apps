@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\FnbCategoryController;
 use App\Http\Controllers\Api\FnbItemController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\SessionController;
+use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CustomerAuthController;
@@ -40,9 +41,13 @@ Route::prefix('public')->group(function () {
     Route::get('devices/{device}/schedule', [DeviceController::class, 'schedule']);
 
     // Booking
+    Route::post('bookings/calculate', [BookingController::class, 'calculate']); // hitung estimasi + QR
     Route::post('bookings', [BookingController::class, 'store']);
     Route::get('bookings/{booking}', [BookingController::class, 'showPublic']);
     Route::patch('bookings/{booking}/cancel', [BookingController::class, 'cancelByCustomer']);
+
+    // Settings (info publik saja)
+    Route::get('settings', [SettingController::class, 'publicIndex']);
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -165,4 +170,8 @@ Route::middleware(['auth:sanctum', 'role:owner'])->group(function () {
         Route::get('cashiers', [ReportController::class, 'cashiers']);
         Route::get('export', [ReportController::class, 'export']);
     });
+
+    // Settings — hanya owner yang bisa baca QRIS string & mengubah
+    Route::get('settings', [SettingController::class, 'index']);
+    Route::put('settings', [SettingController::class, 'update']);
 });
