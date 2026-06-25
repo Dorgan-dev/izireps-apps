@@ -1,10 +1,12 @@
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import UserMetaCard from "../../components/UserProfile/UserMetaCard";
 import UserInfoCard from "../../components/UserProfile/UserInfoCard";
-import UserAddressCard from "../../components/UserProfile/UserAddressCard";
+import UserSecurityCard from "../../components/UserProfile/UserSecurityCard";
+import UserDangerZone from "../../components/UserProfile/UserDangerZone";
 import PageMeta from "../../components/common/PageMeta";
+import { useAuthStore } from "../../store/authStore";
 
 export default function UserProfiles() {
+  const { user } = useAuthStore();
   return (
     <>
       <PageMeta
@@ -18,9 +20,9 @@ export default function UserProfiles() {
           Profile
         </h3>
         <div className="space-y-6">
-          <UserMetaCard />
-          <UserInfoCard />
-          <UserAddressCard />
+          <UserInfoCard user={user} />
+          <UserSecurityCard />
+          <UserDangerZone />
         </div>
       </div>
     </>

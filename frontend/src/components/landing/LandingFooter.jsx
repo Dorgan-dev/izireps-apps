@@ -3,15 +3,14 @@ import { FaWhatsapp, FaInstagram } from "react-icons/fa";
 
 const FOOTER_LINKS = {
   Navigasi: [
-    { label: "Beranda", href: "#beranda" },
-    { label: "Tentang Kami", href: "#tentang" },
-    { label: "Lihat Jadwal", href: "#jadwal" },
-    { label: "Ulasan", href: "#kontak" },
+    { label: "Beranda", href: "/" },
+    { label: "Tentang Kami", href: "/about" },
+    { label: "Lihat Jadwal", href: "/schedule" },
+    { label: "Ulasan", href: "/contact" },
   ],
   Layanan: [
-    { label: "Booking Online", href: "/booking" },
-    { label: "Sesi Walk-in", href: "/booking" },
-    { label: "Paket FnB", href: "/booking" },
+    { label: "Booking Online"},
+    { label: "Sesi Walk-in"},
   ],
 };
 
@@ -51,7 +50,7 @@ export default function LandingFooter() {
               </span>
             </a>
             <p className="mb-5 max-w-xs text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-              Sistem billing rental PlayStation berbasis web untuk mengelola
+              Sistem reservasi PlayStation berbasis web untuk mengelola
               sesi gaming, booking, dan FnB dalam satu platform.
             </p>
             <div className="flex gap-2">

@@ -27,16 +27,13 @@ export const customerAuthApi = {
   register: async (name, email, password) => {
     return api.post("/customer-auth/register", { name, email, password });
   },
-
   login: async (email, password) => {
     return api.post("/customer-auth/login", { email, password });
   },
-
   /** from_register=true → backend menandai already_registered jika akun sudah ada */
   loginWithGoogle: async (access_token, from_register = false) => {
     return api.post("/customer-auth/google", { access_token, from_register });
   },
-
   logout: () => api.post("/customer-auth/logout"),
   me: () => api.get("/customer-auth/me"),
   publicRegister: (data) => api.post("customer-auth/register", data),
@@ -47,22 +44,14 @@ export const customerAuthApi = {
 export const devicesApi = {
   list: () => api.get("/devices"),
   delete: (id) => api.delete(`/devices/${id}`),
-
   show: (id) => api.get(`/devices/${id}`),
-
   create: (data) => api.post("/devices", data),
-
   update: (id, data) => api.put(`/devices/${id}`, data),
-
   updateStatus: (id, status, note) =>
     api.patch(`/devices/${id}/status`, { status, note }),
-
   logs: (id) => api.get(`/devices/${id}/logs`),
-
   rates: (id) => api.get(`/devices/${id}/rates`),
-
   updateRate: (rateId, data) => api.put(`/rates/${rateId}`, data),
-
   setRate: (id, data) => api.post(`/devices/${id}/rates`, data),
   schedule: (id, date) =>
     api.get(`/public/devices/${id}/schedule`, { params: { date } }),
@@ -73,11 +62,8 @@ export const devicesApi = {
 
 export const customersApi = {
   list: (params) => api.get("/customers", { params }),
-
   show: (id) => api.get(`/customers/${id}`),
-
   create: (data) => api.post("/customers", data),
-
   update: (id, data) => api.put(`/customers/${id}`, data),
 };
 
@@ -85,17 +71,11 @@ export const customersApi = {
 
 export const bookingsApi = {
   list: (params) => api.get("/bookings", { params }),
-
   show: (id) => api.get(`/bookings/${id}`),
-
   create: (data) => api.post("/bookings", data),
-
   confirm: (id) => api.patch(`/bookings/${id}/confirm`),
-
   reject: (id, reason) => api.patch(`/bookings/${id}/reject`, { reason }),
-
   cancel: (id, reason) => api.patch(`/bookings/${id}/cancel`, { reason }),
-
   refund: (id, data) => api.post(`/bookings/${id}/refund`, data),
   changeDevice: (id, deviceId) =>
     api.patch(`/bookings/${id}/change-device`, { device_id: deviceId }),
@@ -103,7 +83,6 @@ export const bookingsApi = {
     api.post("/public/bookings", data, {
       headers: { "Content-Type": "multipart/form-data" },
     }),
-
   /** Hitung estimasi biaya & DP, dapatkan QRIS string — tanpa simpan ke DB */
   publicCalculate: (data) => api.post("/public/bookings/calculate", data),
 };
@@ -113,11 +92,8 @@ export const bookingsApi = {
 export const sessionsApi = {
   list: (params) => api.get("/sessions", { params }),
   active: () => api.get("/sessions/active"),
-
   show: (id) => api.get(`/sessions/${id}`),
-
   start: (data) => api.post("/sessions", data),
-
   end: (id) => api.patch(`/sessions/${id}/end`),
   startWalkIn: (data) => api.post("/sessions/start-walkin", data),
   startFromBooking: (bookingId) =>
@@ -139,17 +115,11 @@ export const sessionsApi = {
 
 export const fnbApi = {
   categories: () => api.get("/fnb-categories"),
-
   items: (params) => api.get("/fnb-items", { params }),
-
   createCategory: (data) => api.post("/fnb-categories", data),
-
   updateCategory: (id, data) => api.put(`/fnb-categories/${id}`, data),
-
   createItem: (data) => api.post("/fnb-items", data),
-
   updateItem: (id, data) => api.put(`/fnb-items/${id}`, data),
-
   updateStock: (id, stock) => api.patch(`/fnb-items/${id}/stock`, { stock }),
   deleteItem: (id) => api.delete(`/fnb-items/${id}`),
 };
@@ -158,9 +128,7 @@ export const fnbApi = {
 
 export const transactionsApi = {
   create: (data) => api.post(`/sessions/${data.session_id}/checkout`, data),
-
   show: (id) => api.get(`/transactions/${id}`),
-
   list: (params) => api.get("/transactions", { params }),
 };
 
@@ -168,13 +136,9 @@ export const transactionsApi = {
 
 export const usersApi = {
   list: () => api.get("/users"),
-
   create: (data) => api.post("/users", data),
-
   update: (id, data) => api.put(`/users/${id}`, data),
-
   toggleActive: (id) => api.patch(`/users/${id}/toggle-active`),
-
   delete: (id) => api.delete(`/users/${id}`),
 };
 
