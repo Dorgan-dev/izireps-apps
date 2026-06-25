@@ -11,7 +11,6 @@ use App\Models\Device;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class BookingService
 {
@@ -39,8 +38,8 @@ class BookingService
             $endTime = null;
 
             if ($isPerHour) {
-                // 1. Cek tidak ada booking aktif yang overlap (Hanya untuk per_hour)
-                $this->ensureNoConflict($device, $data['booking_date'], $data['start_time'], $data['end_time']);
+                // 1. Cek konflik dengan booking lain (per_hour)
+                $this->checkConflict($device, $data['booking_date'], $data['start_time'], $data['end_time']);
 
                 // 2. Hitung durasi (Aman karena end_time pasti ada)
                 $durationMinutes = Carbon::parse($data['start_time'])
@@ -55,6 +54,9 @@ class BookingService
                 $dpAmount = round($estimatedCost / 2, 2);
                 $endTime = $data['end_time'];
             } else {
+                // Untuk free_play: cek apakah ada booking aktif di perangkat ini
+                $this->checkConflict($device, $data['booking_date'], $data['start_time'], null);
+
                 $rate = $device->current_rate;
                 $dpAmount = $rate ? $rate->price_per_hour : 0;
             }
@@ -70,6 +72,7 @@ class BookingService
                 'estimated_cost' => !$isPerHour ? null : $estimatedCost,
                 'dp_amount' => $dpAmount,
                 'dp_proof_file' => $dpProofPath,
+                'time_type' => $timeType,
                 'status' => BookingStatus::Pending,
                 'expires_at' => now()->addMinutes(config('booking.verification_timeout_minutes')),
             ]);
@@ -192,7 +195,7 @@ class BookingService
             $booking->update([
                 'status' => BookingStatus::Expired,
                 'cancelled_by' => BookingCancelledBy::System,
-                'cancel_reason' => 'Kedaluwarsa - tidak diverifikasi dalam 1 jam',
+                'cancel_reason' => 'Kedaluwarsa - tidak diverifikasi dalam 15 menit',
             ]);
 
             $this->sessionService->updateDeviceStatus(
@@ -280,22 +283,63 @@ class BookingService
 
     /**
      * Cek tidak ada booking yang overlap di perangkat yang sama.
+     *
+     * Aturan:
+     * - $endTime = null berarti booking baru bertipe free_play (open-ended).
+     * - Booking lama dengan end_time = null (free_play) selalu memblokir booking baru
+     *   yang dimulai setelah atau bersamaan dengan start_time-nya.
+     * - Buffer 5 menit ditambahkan ke end_time booking yang ada (jika bukan NULL).
      */
-    private function ensureNoConflict(Device $device, string $date, string $startTime, string $endTime): void
+    public function checkConflict(Device $device, string $date, string $startTime, ?string $endTime): void
     {
-        $conflict = Booking::where('device_id', $device->id)
+        $messages = "";
+        $query = Booking::where('device_id', $device->id)
             ->whereDate('booking_date', $date)
-            ->whereIn('status', [BookingStatus::Pending, BookingStatus::Confirmed, BookingStatus::InUse])
-            ->where(function ($q) use ($startTime, $endTime) {
-                $q->whereBetween('start_time', [$startTime, $endTime])
-                    ->orWhereBetween('end_time', [$startTime, $endTime])
-                    ->orWhere(function ($q2) use ($startTime, $endTime) {
-                        $q2->where('start_time', '<=', $startTime)
-                            ->where('end_time', '>=', $endTime);
-                    });
-            })
-            ->exists();
+            ->whereIn('status', [BookingStatus::Pending, BookingStatus::Confirmed, BookingStatus::InUse]);
 
-        abort_if($conflict, 422, 'Perangkat sudah dibooking pada waktu yang dipilih.');
+        if ($endTime === null) {
+            // Booking baru bertipe free_play (open-ended):
+            // Konflik jika ada booking aktif yang WAKTU AKTIFNYA masih bertumpuk dengan start_time baru.
+            // - Existing free_play (end_time NULL): masih berjalan → selalu blokir
+            // - Existing per_hour: blokir jika end_time + 5mnt > start_new (belum selesai saat kita mulai)
+            $query->where(function ($q) use ($startTime) {
+                $q->whereNull('end_time')  // free_play lain yang masih aktif
+                    ->orWhereRaw("ADDTIME(end_time, '00:05:00') > ?", [$startTime]); // per_hour yang belum selesai
+            });
+        } else {
+            // Booking baru bertipe per_hour:
+            // Overlap jika: start_existing < end_new DAN (end_existing + 5mnt > start_new ATAU end_existing IS NULL)
+            $query->where('start_time', '<', $endTime)
+                ->where(function ($q) use ($startTime) {
+                    $q->whereNull('end_time')  // free_play yang ada: selalu overlap
+                        ->orWhereRaw("ADDTIME(end_time, '00:05:00') > ?", [$startTime]);
+                });
+        }
+
+        $conflictingBooking = $query->first();
+
+        if ($conflictingBooking) {
+            $formattedEndTime = $conflictingBooking->end_time 
+                ? Carbon::parse($conflictingBooking->end_time)->addMinutes(5)->format('H:i') 
+                : null;
+
+            if ($endTime === null) {
+                // Booking baru bertipe free_play (open-ended):
+                if ($conflictingBooking->time_type === 'free_play' || $conflictingBooking->end_time === null) {
+                    $messages = "Perangkat sudah digunakan dalam sesi Bebas (Free Play). Pilih perangkat lain yang tersedia!";
+                } else {
+                    $messages = "Perangkat sudah dibooking pada jam tersebut (aktif sampai jam {$formattedEndTime} termasuk jeda). Pilih waktu atau perangkat lain!";
+                }
+            } else {
+                // Booking baru bertipe per_hour:
+                if ($conflictingBooking->time_type === 'free_play' || $conflictingBooking->end_time === null) {
+                    $messages = "Perangkat ini digunakan dalam sesi Bebas dari jam {$conflictingBooking->start_time}. Ubah jam bermain atau pilih perangkat lain!";
+                } else {
+                    $messages = "Perangkat sudah dibooking pada jam yang dipilih ({$formattedEndTime}). Pilih waktu lain!";
+                }
+            }
+
+            abort(422, $messages);
+        }
     }
 }

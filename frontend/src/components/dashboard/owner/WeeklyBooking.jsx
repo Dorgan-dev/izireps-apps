@@ -1,10 +1,10 @@
 import Chart from "react-apexcharts";
-import { Dropdown } from "../ui/dropdown/Dropdown";
-import { DropdownItem } from "../ui/dropdown/DropdownItem";
-import { MoreDotIcon } from "../../icons";
+import { Dropdown } from "../../ui/dropdown/Dropdown";
+import { DropdownItem } from "../../ui/dropdown/DropdownItem";
+import { MoreDotIcon } from "../../../icons";
 import { useState } from "react";
 
-export default function MonthlySalesChart() {
+export default function WeeklyBooking() {
   const options = {
     colors: ["#465fff"],
     chart: {

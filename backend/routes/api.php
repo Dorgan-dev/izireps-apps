@@ -13,6 +13,8 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\TransactionController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CustomerAuthController;
+use App\Http\Controllers\Api\OwnerDashboardController;
+use App\Http\Controllers\Api\CashierDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -67,7 +69,7 @@ Route::post('customer-auth/register', [CustomerAuthController::class, 'register'
 // Sanctum akan mencocokkan token dari personal_access_tokens tanpa peduli model-nya
 Route::middleware('auth:sanctum,customer')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
-    Route::get('auth/me',     [AuthController::class, 'me']);
+    Route::get('auth/me', [AuthController::class, 'me']);
 });
 
 
@@ -92,6 +94,7 @@ Route::middleware(['auth:sanctum', 'role:owner,cashier'])->group(function () {
     // ── Booking ───────────────────────────────────────────────
     Route::get('bookings', [BookingController::class, 'index']);
     Route::get('bookings/{booking}', [BookingController::class, 'show']);
+    Route::get('booking/{booking}/proof', [BookingController::class, 'dpproof']);
 
     // ── Pelanggan ─────────────────────────────────────────────
     Route::get('customers', [CustomerController::class, 'index']);
@@ -113,6 +116,9 @@ Route::middleware(['auth:sanctum', 'role:owner,cashier'])->group(function () {
 // KASIR — operasional harian
 // ═══════════════════════════════════════════════════════════════
 Route::middleware(['auth:sanctum', 'role:cashier,owner'])->group(function () {
+
+    // Dashboard kasir
+    Route::get('cashier/dashboard', [CashierDashboardController::class, 'index']);
 
     // Sesi bermain
     Route::post('sessions/start-walkin', [SessionController::class, 'startWalkIn']);
@@ -136,6 +142,9 @@ Route::middleware(['auth:sanctum', 'role:cashier,owner'])->group(function () {
 // OWNER — manajemen & laporan
 // ═══════════════════════════════════════════════════════════════
 Route::middleware(['auth:sanctum', 'role:owner'])->group(function () {
+
+    // Dashboard
+    Route::get('owner/dashboard', [OwnerDashboardController::class, 'index']);
 
     // Perangkat — CRUD
     Route::post('devices', [DeviceController::class, 'store']);

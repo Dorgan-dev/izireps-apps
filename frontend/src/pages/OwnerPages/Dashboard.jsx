@@ -1,102 +1,117 @@
-import { useEffect, useState } from "react";
-import { reportsApi } from "../../services/api";
-import { formatRupiah } from "../../components/ui/badge/Badge";
-import { Monitor, DollarSign, CalendarCheck, TrendingUp } from "lucide-react";
+import PageMeta from "../../components/common/PageMeta";
+import SummaryCards from "../../components/dashboard/owner/SummaryCards";
+import RevenueBreakdown from "../../components/dashboard/owner/RevenueBreakdown";
+import DeviceStatusChart from "../../components/dashboard/owner/DeviceStatusChart";
+import RevenueChart from "../../components/dashboard/owner/RevenueChart";
+import ActivityAlerts from "../../components/dashboard/owner/ActivityAlerts";
+import FnbSummary from "../../components/dashboard/owner/FnbSummary";
+import QuickLinks from "../../components/dashboard/owner/QuickLinks";
+import { useOwnerDashboard } from "../../hooks/useOwnerDashboard";
+import { useAuthStore } from "../../store/authStore";
 
-function StatCard({ icon: Icon, label, value, sub }) {
-  return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">
-          {label}
-        </span>
-        <Icon size={16} className="text-gray-600" />
-      </div>
-      <p className="text-2xl font-bold text-white">{value}</p>
-      {sub && <p className="text-xs text-gray-500 mt-1">{sub}</p>}
-    </div>
-  );
-}
+export default function Dashboard() {
+  const { data, loading, error, refetch } = useOwnerDashboard();
+  const user = useAuthStore((s) => s.user);
 
-export default function OwnerDashboard() {
-  const [summary, setSummary] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const today = new Date().toISOString().split("T")[0];
-
-  useEffect(() => {
-    reportsApi
-      .summary({ from: today, to: today })
-      .then((res) => setSummary(res.data))
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <div>
-        <h1 className="text-xl font-bold text-white mb-6">Dashboard</h1>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-5 h-28 animate-pulse"
-            />
-          ))}
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Memuat dashboard...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-200 bg-red-50 p-8 text-center dark:border-red-800/40 dark:bg-red-900/20">
+          <span className="text-4xl">⚠️</span>
+          <p className="text-sm font-medium text-red-600 dark:text-red-400">
+            {error}
+          </p>
+          <button
+            onClick={refetch}
+            className="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+          >
+            Coba Lagi
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold text-white">Dashboard</h1>
-        <p className="text-sm text-gray-500">
-          {new Date().toLocaleDateString("id-ID", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
+    <>
+      <PageMeta
+        title="Dashboard Owner | IziReps"
+        description="Dashboard monitoring pendapatan, sesi, booking, dan status perangkat untuk owner."
+      />
+
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white/90">
+            Dashboard Owner
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            Selamat datang,{" "}
+            <span className="font-semibold text-gray-700 dark:text-gray-200">
+              {user?.name ?? "Owner"}
+            </span>
+          </p>
+        </div>
+
+        <button
+          onClick={refetch}
+          className="inline-flex items-center gap-2 self-start rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-all hover:bg-gray-50 hover:shadow-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-300 dark:hover:bg-white/10"
+        >
+          <svg className="size-4" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fillRule="evenodd"
+              d="M15.312 11.424a5.5 5.5 0 01-9.379 2.671l-1.06 1.06A7 7 0 0017.25 10H15.5a.75.75 0 010-1.5h3a.75.75 0 01.75.75v3a.75.75 0 01-1.5 0v-1.826zM4.688 8.576a5.5 5.5 0 019.379-2.671l1.06-1.06A7 7 0 002.75 10H4.5a.75.75 0 010 1.5h-3A.75.75 0 01.75 10.75v-3a.75.75 0 011.5 0v1.826z"
+              clipRule="evenodd"
+            />
+          </svg>
+          Refresh
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          icon={DollarSign}
-          label="Pendapatan Hari Ini"
-          value={formatRupiah(summary?.revenue_today ?? 0)}
-        />
+      {/* ── Dashboard Grid ──────────────────────────────────────────────── */}
+      <div className="space-y-5">
+        {/* Row 1: Summary cards */}
+        <SummaryCards data={data} />
 
-        <StatCard
-          icon={Monitor}
-          label="Perangkat Aktif"
-          value={String(summary?.active_devices ?? 0)}
-          sub="dari total perangkat"
-        />
+        {/* Row 2: Breakdown + Performa | Status Perangkat */}
+        <div className="grid grid-cols-12 gap-4 md:gap-5">
+          <div className="col-span-12 xl:col-span-7">
+            <RevenueBreakdown data={data} />
+          </div>
+          <div className="col-span-12 xl:col-span-5">
+            <DeviceStatusChart data={data} />
+          </div>
+        </div>
 
-        <StatCard
-          icon={TrendingUp}
-          label="Sesi Hari Ini"
-          value={String(summary?.sessions_today ?? 0)}
-        />
+        {/* Row 3: Grafik Pendapatan 7 Hari */}
+        <RevenueChart data={data} />
 
-        <StatCard
-          icon={CalendarCheck}
-          label="Total Booking"
-          value={String(summary?.total_bookings ?? 0)}
-          sub="bulan ini"
-        />
+        {/* Row 4: Aktivitas Alerts */}
+        <ActivityAlerts data={data} />
+
+        {/* Row 5: FnB Summary | Quick Links */}
+        <div className="grid grid-cols-12 gap-4 md:gap-5">
+          <div className="col-span-12 md:col-span-6 xl:col-span-5">
+            <FnbSummary data={data} />
+          </div>
+          <div className="col-span-12 md:col-span-6 xl:col-span-4 xl:col-start-9">
+            <QuickLinks />
+          </div>
+        </div>
       </div>
-
-      <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-        <h2 className="text-sm font-semibold text-gray-300 mb-4">
-          Grafik Pendapatan
-        </h2>
-        <p className="text-sm text-gray-500 text-center py-12">
-          Grafik akan tersedia setelah backend terhubung
-        </p>
-      </div>
-    </div>
+    </>
   );
 }

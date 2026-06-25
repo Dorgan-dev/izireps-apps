@@ -85,6 +85,7 @@ export const bookingsApi = {
     }),
   /** Hitung estimasi biaya & DP, dapatkan QRIS string — tanpa simpan ke DB */
   publicCalculate: (data) => api.post("/public/bookings/calculate", data),
+  getProof: (id) => api.get(`/booking/${id}/proof`, { responseType: 'blob' }),
 };
 
 // ─── Sessions ─────────────────────────────────────────────────────────────────
@@ -153,6 +154,18 @@ export const reportsApi = {
 
   export: (type, params) =>
     api.get(`/reports/export/${type}`, { params, responseType: "blob" }),
+};
+
+// ─── Owner Dashboard ─────────────────────────────────────────────────────
+
+export const ownerDashboardApi = {
+  getData: () => api.get("/owner/dashboard"),
+};
+
+// ─── Cashier Dashboard ───────────────────────────────────────────────────
+
+export const cashierDashboardApi = {
+  getData: () => api.get("/cashier/dashboard"),
 };
 
 // ─── Settings (Owner: read/write | Public: read-only) ────────────────────────

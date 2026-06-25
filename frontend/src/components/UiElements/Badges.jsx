@@ -1,8 +1,8 @@
-import PageBreadcrumb from "../../components/common/PageBreadCrumb";
-import Badge from "../../components/ui/badge/Badge";
+import PageBreadcrumb from "../common/PageBreadCrumb";
+import Badge from "../ui/badge/Badge";
 import { PlusIcon } from "../../icons";
-import PageMeta from "../../components/common/PageMeta";
-import ComponentCard from "../../components/common/ComponentCard";
+import PageMeta from "../common/PageMeta";
+import ComponentCard from "../common/ComponentCard";
 
 export default function Badges() {
   return (

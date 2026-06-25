@@ -98,6 +98,7 @@ export function useDeviceBooking(id, user, navigate) {
     try {
       const res = await bookingApi.publicCalculate({
         device_id: device.id,
+        booking_date: formData.booking_date,
         time_type: formData.time_type,
         start_time: formData.start_time,
         end_time:

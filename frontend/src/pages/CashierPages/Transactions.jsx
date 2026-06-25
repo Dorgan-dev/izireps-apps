@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { transactionApi } from "../../api";
 import { formatRupiah, formatDateTime, paymentMethodLabel } from "../../utils";
-import { Badge, EmptyState, Spinner, Modal } from "../../components/common";
+import { Badge, EmptyState, Spinner} from "../../components/common";
 import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import ComponentCard from "../../components/common/ComponentCard";
 import DatePicker from "../../components/form/DatePicker";
 import Select from "../../components/form/Select";
+import Modal from "../../components/ui/modal";
 
 // ─── Detail Struk Transaksi ──────────────────────────────────────────────────
 function ReceiptModal({ trx }) {
@@ -144,7 +145,7 @@ export default function TransactionList() {
                 placeholder="Status"
                 defaultValue="all"
                 options={[
-                  { label: "Semua status", value: "all" },
+                  { label: "Semua status",},
                   { label: "Lunas", value: "paid" },
                   { label: "Pending", value: "pending" },
                   { label: "Dibatalkan", value: "cancelled" },
@@ -293,7 +294,7 @@ export default function TransactionList() {
 
           {/* Modal Struk */}
           <Modal
-            open={!!receipt}
+            isOpen={!!receipt}
             onClose={() => setReceipt(null)}
             title="Struk Transaksi"
           >

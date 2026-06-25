@@ -11,7 +11,6 @@ import ComponentCard from "../../components/common/ComponentCard";
 
 const PAYMENT_METHODS = [
   { value: "cash", label: "Tunai" },
-  { value: "transfer", label: "Transfer Bank" },
   { value: "qris", label: "QRIS" },
 ];
 

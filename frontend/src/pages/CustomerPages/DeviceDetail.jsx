@@ -11,14 +11,12 @@ import PageBreadcrumb from "../../components/common/PageBreadCrumb";
 import PageMeta from "../../components/common/PageMeta";
 import { useAuthStore } from "../../store/authStore";
 import Modal from "../../components/ui/modal";
-import InputField from "../../components/form/input/InputField";
-import FileInput from "../../components/form/input/FileInput";
-import Label from "../../components/form/Label";
-import Select from "../../components/form/Select";
-import DatePicker from "../../components/form/DatePicker";
-import ClockTimePicker from "../../components/form/ClockTimePicker";
-import QrisPaymentStep from "../../components/booking/QrisPaymentStep";
 import { useEffect, useState, useCallback, useRef } from "react";
+
+// Import sub-komponen hasil pemisahan file
+import BookingFormStep from "../../components/booking/BookingFormStep";
+import QrisPaymentStep from "../../components/booking/QrisPaymentStep";
+import ProofUploadStep from "../../components/booking/ProofUploadStep";
 
 // Import custom hook dan helper
 import {
@@ -247,7 +245,6 @@ export default function DeviceDetail() {
   const Icon = typeConfig.icon;
   const cfg = statusConfig[device.status] ?? statusConfig.available;
 
-  // ── Judul modal per step ─────────────────────────────────────────────────
   const modalTitle =
     step === "form"
       ? "Formulir Booking"
@@ -264,21 +261,20 @@ export default function DeviceDetail() {
           { label: "Detail", path: `/device/${id}` },
         ]}
       />
+      
       <div className="min-h-screen bg-gray-50 py-10 dark:bg-gray-950">
         <PageMeta
           title={`Detail ${device.name} - IZIREPS`}
           description={`Detail perangkat ${device.name}`}
         />
+        
+        {/* KARTU UTAMA DETAIL PERANGKAT (SUDAH KEMBALI) */}
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
             <div className="flex flex-col md:flex-row">
-              <div
-                className={`flex flex-1 flex-col items-center justify-center p-10 ${typeConfig.bg}`}
-              >
+              <div className={`flex flex-1 flex-col items-center justify-center p-10 ${typeConfig.bg}`}>
                 <Icon size={120} className={typeConfig.color} />
-                <span
-                  className={`mt-6 inline-block rounded-full px-4 py-1 text-sm font-bold ${typeConfig.bg} ${typeConfig.color} border border-current`}
-                >
+                <span className={`mt-6 inline-block rounded-full px-4 py-1 text-sm font-bold ${typeConfig.bg} ${typeConfig.color} border border-current`}>
                   {device.ps_type}
                 </span>
               </div>
@@ -289,9 +285,7 @@ export default function DeviceDetail() {
                     {device.name}
                   </h1>
                   <div className="mt-3 flex items-center gap-3">
-                    <span
-                      className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${cfg.badgeBg} ${cfg.color}`}
-                    >
+                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${cfg.badgeBg} ${cfg.color}`}>
                       {cfg.label}
                     </span>
                     {device.rate && (
@@ -301,6 +295,7 @@ export default function DeviceDetail() {
                     )}
                   </div>
                 </div>
+                
                 <div className="mb-8 space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -313,6 +308,7 @@ export default function DeviceDetail() {
                     </p>
                   </div>
                 </div>
+
                 <button
                   onClick={handleBookingClick}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-brand-600"
@@ -323,235 +319,69 @@ export default function DeviceDetail() {
             </div>
           </div>
         </div>
-
-        {/* ── Booking Modal ─────────────────────────────────────────── */}
-        <Modal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          title={modalTitle}
-          size="md"
-        >
-          <div className="flex flex-col gap-3 p-1 sm:max-h-none pr-0.5">
-            {/* Step indicator */}
-            <StepIndicator current={step} />
-
-            {/* Error banner */}
-            {bookingError && (
-              <div className="rounded-lg bg-error-50 p-2.5 text-xs text-error-600 dark:bg-error-500/10 dark:text-error-400">
-                {bookingError}
-              </div>
-            )}
-
-            {/* ── STEP 1: Form Booking ─────────────────────────── */}
-            {step === "form" && (
-              <>
-                {/* Nama & WhatsApp */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs sm:text-sm">Nama Pelanggan</Label>
-                    <InputField
-                      name="name"
-                      value={formData.name || ""}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Nama"
-                      className="w-full text-xs sm:text-sm h-9 sm:h-11 px-2.5"
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs sm:text-sm">No. WhatsApp</Label>
-                    <InputField
-                      type="text"
-                      name="phone"
-                      value={formData.phone || ""}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="08123..."
-                      className="w-full text-xs sm:text-sm h-9 sm:h-11 px-2.5"
-                    />
-                  </div>
-                </div>
-
-                {/* Tanggal & Tipe Waktu */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
-                  <div
-                    className="flex flex-col gap-1 relative z-[70]"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      isDatePickerOpenRef.current = true;
-                    }}
-                    onFocus={() => {
-                      isDatePickerOpenRef.current = true;
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => {
-                        isDatePickerOpenRef.current = false;
-                      }, 200);
-                    }}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <DatePicker
-                      id="booking-date-picker"
-                      label="Tanggal Bermain"
-                      minDate={getTodayDateString()}
-                      placeholder="Pilih tgl"
-                      value={formData.booking_date || getTodayDateString()}
-                      onChange={(_, dateStr) => {
-                        isDatePickerOpenRef.current = false;
-                        if (!dateStr) return;
-                        if (dateStr !== getTodayDateString())
-                          setIsTimeEdited(false);
-                        setSelectedBookingDate(dateStr);
-                        setFormData((p) => ({ ...p, booking_date: dateStr }));
-                      }}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs sm:text-sm">Tipe Waktu</Label>
-                    <Select
-                      value={timeType}
-                      onChange={(val) => {
-                        setTimeType(val);
-                        setFormData((prev) => ({ ...prev, time_type: val }));
-                      }}
-                      options={[
-                        { value: "per_hour", label: "Per jam" },
-                        { value: "free_play", label: "Bebas" },
-                      ]}
-                      placeholder="Tipe"
-                      className="w-full text-xs sm:text-sm h-9 sm:h-11"
-                    />
-                  </div>
-                </div>
-
-                {/* Durasi */}
-                {timeType === "per_hour" && (
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs sm:text-sm">Durasi Bermain</Label>
-                    <Select
-                      value={String(duration)}
-                      onChange={(val) => setDuration(Number(val))}
-                      options={[1, 2, 3, 4, 5, 6].map((h) => ({
-                        value: String(h),
-                        label: `${h} jam`,
-                      }))}
-                      placeholder="Pilih durasi"
-                      className="w-full text-xs sm:text-sm h-9 sm:h-11"
-                    />
-                  </div>
-                )}
-
-                {/* Jam Mulai & Selesai */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 relative">
-                  <div className="flex flex-col gap-1 relative z-[65]">
-                    <ClockTimePicker
-                      id="start_time"
-                      label="Jam Mulai"
-                      value={formData.start_time || getCurrentTime()}
-                      onChange={handleTimeChange}
-                      minTime={minTime}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label className="text-xs sm:text-sm">Jam Selesai</Label>
-                    <div className="h-9 sm:h-11 flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2.5 text-xs sm:text-sm font-mono text-gray-700 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 select-none w-full truncate">
-                      {timeType === "free_play" ? (
-                        <span className="text-warning-500 italic text-[11px] sm:text-sm">
-                          Bebas
-                        </span>
-                      ) : (
-                        formData.end_time || (
-                          <span className="text-gray-400 dark:text-gray-500">
-                            Otomatis
-                          </span>
-                        )
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action: Bayar */}
-                <div className="mt-2 flex gap-2 border-t border-gray-200 pt-3 dark:border-gray-800 sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="rounded-lg border border-gray-200 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 w-1/2 sm:w-auto transition-colors"
-                  >
-                    Batal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleProceedToPayment}
-                    disabled={isCalculating}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-500 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 w-1/2 sm:w-auto transition-colors"
-                  >
-                    {isCalculating && (
-                      <Loader2 size={14} className="animate-spin" />
-                    )}
-                    {isCalculating ? "Menghitung..." : "Bayar →"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* ── STEP 2: QR Payment ───────────────────────────── */}
-            {step === "payment" && qrisData && (
-              <QrisPaymentStep
-                dpAmount={qrisData.dp_amount}
-                estimatedCost={qrisData.estimated_cost}
-                qrisString={qrisData.qris_string}
-                qrisAvailable={qrisData.qris_available}
-                onProceedToProof={handleProceedToProof}
-                onBack={() => setStep("form")}
-              />
-            )}
-
-            {/* ── STEP 3: Upload Bukti Bayar ───────────────────── */}
-            {step === "proof" && (
-              <>
-                <div className="rounded-lg bg-brand-50 dark:bg-brand-950/30 p-3 text-xs text-brand-700 dark:text-brand-300">
-                  ✅ Pembayaran berhasil? Upload screenshot bukti transfer di
-                  bawah ini.
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label className="text-xs sm:text-sm">
-                    Bukti Transfer DP (Maks 5MB)
-                  </Label>
-                  <FileInput
-                    onChange={(e) => setDpProof(e.target.files?.[0] || null)}
-                    className="w-full text-xs sm:text-sm"
-                  />
-                  <p className="mt-0.5 text-[10px] sm:text-xs text-gray-500">
-                    Format: JPG, PNG
-                  </p>
-                </div>
-
-                <div className="mt-2 flex gap-2 border-t border-gray-200 pt-3 dark:border-gray-800 sm:justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setStep("payment")}
-                    className="rounded-lg border border-gray-200 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-300 w-1/2 sm:w-auto transition-colors"
-                  >
-                    ← Kembali
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleBookingSubmit}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-500 py-2 sm:px-4 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:bg-brand-600 disabled:opacity-70 w-1/2 sm:w-auto transition-colors"
-                  >
-                    {isSubmitting && (
-                      <Loader2 size={14} className="animate-spin" />
-                    )}
-                    {isSubmitting ? "Mengirim..." : "Kirim Booking"}
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </Modal>
       </div>
+
+      {/* ── Booking Modal ─────────────────────────────────────────── */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        title={modalTitle}
+        size="md"
+      >
+        <div className="flex flex-col gap-3 p-1 sm:max-h-none pr-0.5">
+          <StepIndicator current={step} />
+
+          {bookingError && (
+            <div className="rounded-lg bg-error-50 p-2.5 text-xs text-error-600 dark:bg-error-500/10 dark:text-error-400">
+              {bookingError}
+            </div>
+          )}
+
+          {/* ── STEP 1: Form Booking ─────────────────────────── */}
+          {step === "form" && (
+            <BookingFormStep
+              formData={formData}
+              handleInputChange={handleInputChange}
+              timeType={timeType}
+              setTimeType={setTimeType}
+              setFormData={setFormData}
+              duration={duration}
+              setDuration={setDuration}
+              minTime={minTime}
+              handleTimeChange={handleTimeChange}
+              isCalculating={isCalculating}
+              handleProceedToPayment={handleProceedToPayment}
+              handleCloseModal={handleCloseModal}
+              isDatePickerOpenRef={isDatePickerOpenRef}
+              setSelectedBookingDate={setSelectedBookingDate}
+              setIsTimeEdited={setIsTimeEdited}
+              getTodayDateString={getTodayDateString}
+            />
+          )}
+
+          {/* ── STEP 2: QR Payment ───────────────────────────── */}
+          {step === "payment" && qrisData && (
+            <QrisPaymentStep
+              dpAmount={qrisData.dp_amount}
+              estimatedCost={qrisData.estimated_cost}
+              qrisString={qrisData.qris_string}
+              qrisAvailable={qrisData.qris_available}
+              onProceedToProof={handleProceedToProof}
+              onBack={() => setStep("form")}
+            />
+          )}
+
+          {/* ── STEP 3: Upload Bukti Bayar ───────────────────── */}
+          {step === "proof" && (
+            <ProofUploadStep
+              setDpProof={setDpProof}
+              handleBookingSubmit={handleBookingSubmit}
+              isSubmitting={isSubmitting}
+              setStep={setStep}
+            />
+          )}
+        </div>
+      </Modal>
     </>
   );
 }

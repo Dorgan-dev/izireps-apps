@@ -1,9 +1,27 @@
 import { useEffect, useState } from "react";
 import { Check, X, Calendar, Clock, Timer, MonitorPlay } from "lucide-react";
 import { formatRupiah } from "../ui/badge/Badge";
+import Modal from "../ui/modal";
+import { bookingsApi } from "../../services/api";
 
 export default function BookingItems({ booking, onReject, onConfirm }) {
   const [timeLeft, setTimeLeft] = useState("");
+  const [showProof, setShowProof] = useState(false);
+  const [proofUrl, setProofUrl] = useState("");
+  const [isFetchingProof, setIsFetchingProof] = useState(false);
+
+  useEffect(() => {
+    if (showProof && booking.dp_proof_file && !proofUrl) {
+      setIsFetchingProof(true);
+      bookingsApi.getProof(booking.id)
+        .then((res) => {
+          const url = URL.createObjectURL(res.data);
+          setProofUrl(url);
+        })
+        .catch((err) => console.error("Gagal mengambil bukti:", err))
+        .finally(() => setIsFetchingProof(false));
+    }
+  }, [showProof, booking.dp_proof_file, booking.id, proofUrl]);
 
   useEffect(() => {
     if (booking.status !== "pending" || !booking.expires_at) {
@@ -110,16 +128,52 @@ export default function BookingItems({ booking, onReject, onConfirm }) {
 
       {/* BUKTI TRANSFER */}
       {booking.dp_proof_file && (
-        <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800/60 flex sm:justify-start">
-          <a
-            href={booking.dp_proof_file}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+        <>
+          {console.log("dp_proof_file:", booking.dp_proof_file)}
+          {console.log(
+            "image url:",
+            booking.dp_proof_file?.startsWith("http")
+              ? booking.dp_proof_file
+              : `http://localhost:8000/storage/${booking.dp_proof_file}`
+          )}
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800/60 flex sm:justify-start">
+            <button
+              onClick={() => setShowProof(true)}
+              className="inline-flex items-center text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-300 transition-colors"
+            >
+              Lihat Bukti Transfer →
+            </button>
+          </div>
+
+          <Modal
+            isOpen={showProof}
+            onClose={() => setShowProof(false)}
+            title="Bukti Transfer Pelanggan"
+            size="md"
           >
-            Lihat Bukti Transfer →
-          </a>
-        </div>
+            <div className="flex justify-center bg-gray-50 dark:bg-gray-800/50 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 min-h-[200px] items-center">
+              {isFetchingProof ? (
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+              ) : proofUrl ? (
+                <img
+                  src={proofUrl}
+                  alt="Bukti Transfer"
+                  className="max-w-full max-h-[60vh] object-contain"
+                />
+              ) : (
+                <span className="text-gray-500 text-sm">Gagal memuat gambar</span>
+              )}
+            </div>
+            <div className="mt-5 flex justify-end">
+              <button
+                onClick={() => setShowProof(false)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700"
+              >
+                Tutup
+              </button>
+            </div>
+          </Modal>
+        </>
       )}
     </div>
   );

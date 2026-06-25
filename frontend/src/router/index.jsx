@@ -5,7 +5,7 @@ import { useAuthStore } from "../store/authStore";
 import PageLoader from "../components/ui/PageLoader";
 
 const PublicLayout = lazy(() => import("../layouts/public/PublicLayout"));
-const PublicLanding = lazy(() => import("../pages/CustomerPages/LandingPage"));
+const PublicLanding = lazy(() => import("../pages/CustomerPages/Home"));
 const PublicLogin = lazy(() => import("../pages/AuthPages/Login"));
 const PublicRegister = lazy(() => import("../pages/AuthPages/Register"));
 const PublicAbout = lazy(() => import("../pages/CustomerPages/About"));
@@ -13,7 +13,7 @@ const PublicContact = lazy(() => import("../pages/CustomerPages/Contact"));
 const PublicDeviceList = lazy(() => import("../pages/CustomerPages/DeviceList"));
 const PublicDeviceDetail = lazy(() => import("../pages/CustomerPages/DeviceDetail"));
 const UserProfile = lazy(() => import("../pages/SharedPages/UserProfiles")); // 👈 Nama variabelnya UserProfile
-const DeviceSchedule = lazy(() => import("../pages/CustomerPages/DeviceSchedule"));
+const DeviceSchedule = lazy(() => import("../pages/CustomerPages/Schedule"));
 
 const OwnerLayout = lazy(() => import("../layouts/owner/OwnerLayout"));
 const OwnerDashboard = lazy(() => import("../pages/OwnerPages/Dashboard"));

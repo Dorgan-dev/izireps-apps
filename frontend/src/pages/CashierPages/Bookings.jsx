@@ -36,11 +36,21 @@ export default function CashierBookings() {
         const d = res.data;
         // Mendukung respons paginasi maupun array biasa
         if (d?.data && Array.isArray(d.data)) {
-          setBookings(d.data);
+          // --- URUTKAN DATA DARI YANG TERDAHULU (ASCENDING) ---
+          const sortedData = [...d.data].sort(
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
+          );
+          
+          setBookings(sortedData);
           setLastPage(d.last_page ?? 1);
           setTotal(d.total ?? d.data.length);
         } else if (Array.isArray(d)) {
-          setBookings(d);
+          // --- URUTKAN DATA DARI YANG TERDAHULU (ASCENDING) ---
+          const sortedData = [...d].sort(
+            (a, b) => new Date(a.created_at) - new Date(b.created_at)
+          );
+
+          setBookings(sortedData);
           setLastPage(1);
           setTotal(d.length);
         } else {

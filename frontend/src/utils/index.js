@@ -83,7 +83,6 @@ export const bookingStatusBadge = {
 export const paymentMethodLabel = {
   cash: "Tunai",
   qris: "QRIS",
-  transfer: "Transfer bank",
 };
 
 export const sessionStatusLabel = {

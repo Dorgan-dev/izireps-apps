@@ -14,7 +14,7 @@ Artisan::command('inspire', function () {
 use Illuminate\Support\Facades\Schedule;
 
 // Cek booking expired setiap 5 menit
-Schedule::command('bookings:expire-unverified')->everyFiveMinutes();
+Schedule::command('bookings:expire-unverified')->everyMinute();
 
 // Cek no-show setiap menit
 Schedule::command('bookings:auto-cancel-noshow')->everyMinute();

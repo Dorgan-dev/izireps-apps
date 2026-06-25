@@ -4,7 +4,7 @@
 // app/Console/Commands/ExpireUnverifiedBookings.php
 // ============================================================
 // Jalankan via scheduler setiap 5 menit.
-// Membatalkan booking yang tidak diverifikasi kasir dalam 1 jam.
+// Membatalkan booking yang tidak diverifikasi kasir dalam 15 menit.
 
 namespace App\Console\Commands;
 
@@ -15,7 +15,7 @@ use Illuminate\Console\Command;
 class ExpireUnverifiedBookings extends Command
 {
     protected $signature = 'bookings:expire-unverified';
-    protected $description = 'Batalkan booking pending yang melebihi batas waktu verifikasi 1 jam';
+    protected $description = 'Batalkan booking pending yang melebihi batas waktu verifikasi 15 menit';
 
     public function handle(BookingService $service): void
     {

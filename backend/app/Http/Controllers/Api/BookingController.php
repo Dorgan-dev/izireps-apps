@@ -21,7 +21,8 @@ class BookingController extends Controller
     public function __construct(
         protected BookingService $service,
         protected QrisService $qrisService,
-    ) {}
+    ) {
+    }
 
     public function index(Request $request)
     {
@@ -42,17 +43,21 @@ class BookingController extends Controller
     public function calculate(Request $request)
     {
         $data = $request->validate([
-            'device_id'  => 'required|exists:devices,id',
-            'time_type'  => 'required|in:per_hour,free_play',
+            'device_id' => 'required|exists:devices,id',
+            'time_type' => 'required|in:per_hour,free_play',
+            'booking_date' => 'required|date|after_or_equal:today',
             'start_time' => 'required|date_format:H:i',
-            'end_time'   => 'required_if:time_type,per_hour|nullable|date_format:H:i',
+            'end_time' => 'required_if:time_type,per_hour|nullable|date_format:H:i',
         ]);
 
-        $device   = Device::findOrFail($data['device_id']);
-        $rate     = $device->current_rate;
+        $device = Device::findOrFail($data['device_id']);
+        $rate = $device->current_rate;
         $timeType = $data['time_type'];
 
         if ($timeType === 'per_hour') {
+            // Cek konflik lebih awal saat user menekan "Bayar"
+            $this->service->checkConflict($device, $data['booking_date'], $data['start_time'], $data['end_time']);
+
             $durationMinutes = Carbon::parse($data['start_time'])
                 ->diffInMinutes(Carbon::parse($data['end_time']));
             $estimatedCost = $rate
@@ -60,13 +65,16 @@ class BookingController extends Controller
                 : 0;
             $dpAmount = round($estimatedCost / 2, 2);
         } else {
-            // free_play: DP = 1 jam tarif
+            // free_play: juga cek konflik sebelum tampilkan QRIS
+            $this->service->checkConflict($device, $data['booking_date'], $data['start_time'], null);
+
+            // DP = 1 jam tarif
             $estimatedCost = null;
-            $dpAmount      = $rate ? (float) $rate->price_per_hour : 0;
+            $dpAmount = $rate ? (float) $rate->price_per_hour : 0;
         }
 
         // Generate QRIS dengan nominal DP
-        $baseQris   = Setting::get('qris_string');
+        $baseQris = Setting::get('qris_string');
         $qrisString = null;
 
         if ($baseQris) {
@@ -76,9 +84,9 @@ class BookingController extends Controller
         return response()->json([
             'data' => [
                 'estimated_cost' => $estimatedCost,
-                'dp_amount'      => $dpAmount,
-                'qris_string'    => $qrisString,
-                'qris_available' => ! is_null($qrisString),
+                'dp_amount' => $dpAmount,
+                'qris_string' => $qrisString,
+                'qris_available' => !is_null($qrisString),
             ],
         ]);
     }
@@ -90,16 +98,16 @@ class BookingController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'device_id'    => 'required|exists:devices,id',
-            'customer_id'  => 'required|exists:customers,id',
+            'device_id' => 'required|exists:devices,id',
+            'customer_id' => 'required|exists:customers,id',
             'booking_date' => 'required|date|after_or_equal:today',
-            'start_time'   => 'required|date_format:H:i',
-            'time_type'    => 'required|in:per_hour,free_play',
-            'end_time'     => 'required_if:time_type,per_hour|nullable|date_format:H:i',
-            'dp_proof'     => 'required|file|mimes:jpg,jpeg,png|max:5120',
+            'start_time' => 'required|date_format:H:i',
+            'time_type' => 'required|in:per_hour,free_play',
+            'end_time' => 'required_if:time_type,per_hour|nullable|date_format:H:i',
+            'dp_proof' => 'required|file|mimes:jpg,jpeg,png|max:5120',
         ]);
 
-        $path    = $request->file('dp_proof')->store('dp-proofs', 'public');
+        $path = $request->file('dp_proof')->store('dp-proofs', 'private');
         $booking = $this->service->create($data, $path);
 
         return response()->json(['data' => $booking], 201);
@@ -108,9 +116,15 @@ class BookingController extends Controller
     public function showPublic(Booking $booking)
     {
         // Tampilkan tanpa data sensitif
-        return response()->json(['data' => $booking->only([
-            'id', 'booking_date', 'start_time', 'end_time', 'status',
-        ])]);
+        return response()->json([
+            'data' => $booking->only([
+                'id',
+                'booking_date',
+                'start_time',
+                'end_time',
+                'status',
+            ])
+        ]);
     }
 
     public function show(Booking $booking)
@@ -141,14 +155,14 @@ class BookingController extends Controller
     {
         $request->validate(['device_id' => 'required|exists:devices,id']);
         $newDevice = Device::findOrFail($request->device_id);
-        $booking   = $this->service->changeDevice($booking, $newDevice, $request->user());
+        $booking = $this->service->changeDevice($booking, $newDevice, $request->user());
         return response()->json(['data' => $booking]);
     }
 
     public function refund(Request $request, Booking $booking)
     {
         $request->validate([
-            'reason'        => 'required|string|min:10',
+            'reason' => 'required|string|min:10',
             'refund_method' => 'required|in:cash,transfer',
         ]);
 
@@ -160,5 +174,18 @@ class BookingController extends Controller
         );
 
         return response()->json(['data' => $booking]);
+    }
+
+    public function dpproof(Booking $booking)
+    {
+        $path = storage_path(
+            'app/private/' . $booking->dp_proof_file
+        );
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
     }
 }
