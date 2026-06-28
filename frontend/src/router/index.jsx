@@ -4,7 +4,7 @@ import { RequireAuth, RequireRole } from "./guards";
 import { useAuthStore } from "../store/authStore";
 import PageLoader from "../components/ui/PageLoader";
 
-const PublicLayout = lazy(() => import("../layouts/public/PublicLayout"));
+const PublicLayout = lazy(() => import("../layouts/customer/CustomerLayout"));
 const PublicLanding = lazy(() => import("../pages/CustomerPages/Home"));
 const PublicLogin = lazy(() => import("../pages/AuthPages/Login"));
 const PublicRegister = lazy(() => import("../pages/AuthPages/Register"));
@@ -58,8 +58,6 @@ function LoginRoute() {
 }
 
 function RegisterRoute() {
-  // Tidak redirect user yang sudah login — customer perlu akses
-  // halaman ini bahkan jika sudah punya token (untuk banner already_registered)
   return <S><PublicRegister /></S>;
 }
 
@@ -78,15 +76,12 @@ const router = createBrowserRouter([
           { path: "contact", element: <S><PublicContact /></S> },
           { path: "devices", element: <S><PublicDeviceList /></S> },
           { path: "device/detail/:id", element: <S><PublicDeviceDetail /></S> },
-          
-          // 👇 PERBAIKAN: Menggunakan RequireAuth (sesuai guard Anda) + Bungkus dengan <S> + Menggunakan nama UserProfile
           {
-            element: <RequireAuth />, 
+            element: <RequireAuth />,
             children: [
-              { path: "profile", element: <S><UserProfile /></S> } 
+              { path: "profile", element: <S><UserProfile /></S> }
             ]
           },
-          
           { path: "schedule", element: <S><DeviceSchedule /></S> },
         ],
       },

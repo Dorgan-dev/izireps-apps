@@ -94,18 +94,18 @@ function getDeviceIcon(psType) {
 
 function SkeletonTable() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-      <div className="h-11 bg-gray-50 dark:bg-gray-800/50" />
+    <div className="animate-pulse rounded-2xl border border-base-300 overflow-hidden">
+      <div className="h-11 bg-base-200/50" />
       {Array.from({ length: 4 }).map((_, i) => (
         <div
           key={i}
-          className="flex items-center gap-6 px-6 py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+          className="flex items-center gap-6 px-6 py-4 border-b border-base-300/50 last:border-b-0"
         >
-          <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-14 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-14 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-          <div className="h-3 w-16 rounded bg-gray-200 dark:bg-gray-700" />
+          <div className="h-3 w-24 rounded bg-base-200" />
+          <div className="h-3 w-14 rounded bg-base-200" />
+          <div className="h-3 w-14 rounded bg-base-200" />
+          <div className="h-3 w-24 rounded bg-base-200" />
+          <div className="h-3 w-16 rounded bg-base-200" />
         </div>
       ))}
     </div>
@@ -250,7 +250,7 @@ export default function DeviceSchedule() {
             <button
               onClick={() => fetchData(selectedDate, true)}
               disabled={loading || refreshing}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-all hover:border-gray-300 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-base-300 bg-base-100 px-3 py-2 text-xs font-medium text-base-content/80 transition-all hover:border-base-300/80 hover:bg-base-200 disabled:opacity-50"
             >
               <RefreshCw
                 size={13}
@@ -274,7 +274,7 @@ export default function DeviceSchedule() {
         <div className="space-y-5">
           {/* ── Legend + Last Updated ── */}
           <div className="flex flex-wrap items-center gap-4 px-1">
-            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+            <span className="text-xs font-medium text-base-content/60">
               Keterangan:
             </span>
             {[
@@ -294,14 +294,14 @@ export default function DeviceSchedule() {
                   className={`inline-block h-2.5 w-2.5 rounded-full ${dotClass}`}
                 />
                 <IconComp size={11} className="text-gray-400" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">
+                <span className="text-xs text-base-content/60">
                   {label}
                 </span>
               </div>
             ))}
             <div className="flex items-center gap-1.5 ml-auto">
               <Clock size={12} className="text-gray-400" />
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-base-content/60">
                 Diperbarui{" "}
                 {lastUpdated.toLocaleTimeString("id-ID", {
                   hour: "2-digit",
@@ -337,7 +337,7 @@ export default function DeviceSchedule() {
                 {
                   label: "Total Perangkat",
                   value: stats.totalDevices,
-                  color: "text-gray-800 dark:text-white",
+                  color: "text-base-content",
                 },
                 {
                   label: "Tersedia",
@@ -357,10 +357,10 @@ export default function DeviceSchedule() {
               ].map(({ label, value, color }) => (
                 <div
                   key={label}
-                  className="rounded-xl border border-gray-200 bg-white p-4 text-center dark:border-gray-800 dark:bg-white/[0.03]"
+                  className="rounded-xl border border-base-300 bg-base-100 p-4 text-center shadow-theme-xs"
                 >
                   <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-xs text-base-content/60">
                     {label}
                   </p>
                 </div>
@@ -370,14 +370,14 @@ export default function DeviceSchedule() {
 
           {/* ── Schedule Table ── */}
           {!loading && !error && (
-            <div className="rounded-2xl border border-gray-200 bg-white dark:border-gray-800 dark:bg-white/[0.03] overflow-hidden">
+            <div className="rounded-2xl border border-base-300 bg-base-100 overflow-hidden shadow-theme-xs">
               {/* Table Header */}
-              <div className="hidden sm:grid sm:grid-cols-[1.5fr_1fr_1fr_1.4fr_1fr] gap-4 px-6 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-800">
+              <div className="hidden sm:grid sm:grid-cols-[1.5fr_1fr_1fr_1.4fr_1fr] gap-4 px-6 py-3 bg-base-200/50 border-b border-base-300">
                 {["Perangkat", "Jam Mulai", "Jam Selesai", "Status", "Sisa Waktu"].map(
                   (col) => (
                     <span
                       key={col}
-                      className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                      className="text-[11px] font-semibold uppercase tracking-wider text-base-content/60"
                     >
                       {col}
                     </span>
@@ -392,7 +392,7 @@ export default function DeviceSchedule() {
                     size={36}
                     className="text-gray-300 dark:text-gray-600"
                   />
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
+                  <p className="text-sm text-base-content/60">
                     {isSameDay(selectedDate, new Date())
                       ? "Tidak ada jadwal aktif atau mendatang saat ini."
                       : "Tidak ada jadwal pada tanggal ini."}
@@ -406,9 +406,9 @@ export default function DeviceSchedule() {
                   return (
                     <div
                       key={row.key}
-                      className={`grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.4fr_1fr] gap-2 sm:gap-4 px-5 sm:px-6 py-4 border-b border-gray-100 dark:border-gray-800 last:border-b-0 transition-colors hover:bg-gray-50/60 dark:hover:bg-white/[0.02] ${
+                      className={`grid grid-cols-1 sm:grid-cols-[1.5fr_1fr_1fr_1.4fr_1fr] gap-2 sm:gap-4 px-5 sm:px-6 py-4 border-b border-base-300/50 last:border-b-0 transition-colors hover:bg-base-200/50 ${
                         row.isActive
-                          ? "bg-orange-50/40 dark:bg-orange-950/10"
+                          ? "bg-warning/10"
                           : ""
                       }`}
                     >
@@ -418,7 +418,7 @@ export default function DeviceSchedule() {
                           size={16}
                           className="shrink-0 text-gray-500 dark:text-gray-400"
                         />
-                        <span className="text-sm font-medium text-gray-800 dark:text-white/90">
+                        <span className="text-sm font-medium text-base-content/90">
                           {row.deviceName}
                         </span>
                       </div>
@@ -428,7 +428,7 @@ export default function DeviceSchedule() {
                         <span className="text-xs text-gray-400 sm:hidden">
                           Mulai:
                         </span>
-                        <span className="text-sm tabular-nums text-gray-700 dark:text-gray-300">
+                        <span className="text-sm tabular-nums text-base-content/80">
                           {formatTime(row.startTime)}
                         </span>
                       </div>
@@ -438,7 +438,7 @@ export default function DeviceSchedule() {
                         <span className="text-xs text-gray-400 sm:hidden">
                           Selesai:
                         </span>
-                        <span className="text-sm tabular-nums text-gray-700 dark:text-gray-300">
+                        <span className="text-sm tabular-nums text-base-content/80">
                           {formatTime(row.endTime)}
                         </span>
                       </div>
@@ -476,7 +476,7 @@ export default function DeviceSchedule() {
                             </span>
                           </>
                         ) : (
-                          <span className="text-sm text-gray-400 dark:text-gray-500">
+                          <span className="text-sm text-base-content/50">
                             —
                           </span>
                         )}

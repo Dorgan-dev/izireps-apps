@@ -31,27 +31,27 @@ import {
 const statusConfig = {
   available: {
     label: "Tersedia",
-    color: "text-success-600 dark:text-success-400",
-    border: "border-success-200",
-    badgeBg: "bg-success-50 dark:bg-success-950/50",
+    color: "text-success",
+    border: "border-success",
+    badgeBg: "badge-success",
   },
   booked: {
     label: "Dibooking",
-    color: "text-brand-600 dark:text-brand-400",
-    border: "border-brand-200",
-    badgeBg: "bg-brand-50 dark:bg-brand-950/50",
+    color: "text-primary",
+    border: "border-primary",
+    badgeBg: "badge-primary",
   },
   in_use: {
     label: "Digunakan",
-    color: "text-warning-600 dark:text-warning-400",
-    border: "border-warning-200",
-    badgeBg: "bg-warning-50 dark:bg-warning-950/50",
+    color: "text-warning",
+    border: "border-warning",
+    badgeBg: "badge-warning",
   },
   maintenance: {
     label: "Maintenance",
-    color: "text-error-600 dark:text-error-400",
-    border: "border-error-200",
-    badgeBg: "bg-error-50 dark:bg-error-950/50",
+    color: "text-error",
+    border: "border-error",
+    badgeBg: "badge-error",
   },
 };
 
@@ -60,18 +60,18 @@ function getTypeConfig(psType) {
     return {
       icon: Monitor,
       color: "text-orange-500",
-      bg: "bg-orange-50 dark:bg-orange-950/40",
+      bg: "bg-orange-500/10",
     };
   if (psType === "PS5")
     return {
       icon: Tv2,
-      color: "text-success-600 dark:text-success-400",
-      bg: "bg-success-50 dark:bg-orange-950/40",
+      color: "text-success",
+      bg: "bg-success/10",
     };
   return {
     icon: Gamepad2,
-    color: "text-brand-500",
-    bg: "bg-brand-50 dark:bg-brand-950/40",
+    color: "text-primary",
+    bg: "bg-primary/10",
   };
 }
 
@@ -90,18 +90,18 @@ function StepIndicator({ current }) {
         <div key={s.key} className="flex items-center gap-1">
           <div
             className={`flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold transition-colors
-                        ${i < idx ? "bg-brand-500 text-white" : i === idx ? "bg-brand-500 text-white ring-2 ring-brand-200" : "bg-gray-100 text-gray-400 dark:bg-gray-800"}`}
+                        ${i < idx ? "bg-primary text-primary-content" : i === idx ? "bg-primary text-primary-content ring-2 ring-primary/30" : "bg-base-200 text-base-content/40"}`}
           >
             {i < idx ? "✓" : i + 1}
           </div>
           <span
-            className={`text-[10px] font-medium ${i === idx ? "text-brand-600 dark:text-brand-400" : "text-gray-400 dark:text-gray-600"}`}
+            className={`text-[10px] font-medium ${i === idx ? "text-primary" : "text-base-content/40"}`}
           >
             {s.label}
           </span>
           {i < STEPS.length - 1 && (
             <div
-              className={`w-4 h-px mx-0.5 ${i < idx ? "bg-brand-500" : "bg-gray-200 dark:bg-gray-700"}`}
+              className={`w-4 h-px mx-0.5 ${i < idx ? "bg-primary" : "bg-base-300"}`}
             />
           )}
         </div>
@@ -220,21 +220,21 @@ export default function DeviceDetail() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <Loader2 className="animate-spin text-brand-500" size={32} />
+      <div className="flex min-h-screen items-center justify-center bg-base-200">
+        <Loader2 className="animate-spin text-primary" size={32} />
       </div>
     );
   }
 
   if (error || !device) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 text-center dark:bg-gray-950">
-        <WifiOff size={40} className="mb-4 text-gray-400" />
-        <h2 className="mb-2 text-xl font-bold text-gray-900 dark:text-white">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-base-200 text-center">
+        <WifiOff size={40} className="mb-4 text-base-content/40" />
+        <h2 className="mb-2 text-xl font-bold text-base-content">
           Oops!
         </h2>
-        <p className="mb-6 text-gray-500 dark:text-gray-400">{error}</p>
-        <Link to="/device" className="text-brand-500 hover:underline">
+        <p className="mb-6 text-base-content/60">{error}</p>
+        <Link to="/device" className="text-primary hover:underline">
           Kembali ke daftar perangkat
         </Link>
       </div>
@@ -262,7 +262,7 @@ export default function DeviceDetail() {
         ]}
       />
       
-      <div className="min-h-screen bg-gray-50 py-10 dark:bg-gray-950">
+      <div className="min-h-[80vh] bg-base-200 py-10">
         <PageMeta
           title={`Detail ${device.name} - IZIREPS`}
           description={`Detail perangkat ${device.name}`}
@@ -270,7 +270,7 @@ export default function DeviceDetail() {
         
         {/* KARTU UTAMA DETAIL PERANGKAT (SUDAH KEMBALI) */}
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <div className="mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-theme-sm dark:border-gray-800 dark:bg-gray-900">
+          <div className="mt-6 overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-theme-sm">
             <div className="flex flex-col md:flex-row">
               <div className={`flex flex-1 flex-col items-center justify-center p-10 ${typeConfig.bg}`}>
                 <Icon size={120} className={typeConfig.color} />
@@ -281,15 +281,15 @@ export default function DeviceDetail() {
 
               <div className="flex-1 p-8">
                 <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  <h1 className="text-3xl font-bold text-base-content">
                     {device.name}
                   </h1>
                   <div className="mt-3 flex items-center gap-3">
-                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-medium ${cfg.badgeBg} ${cfg.color}`}>
+                    <span className={`badge badge-sm border-none font-medium ${cfg.badgeBg}`}>
                       {cfg.label}
                     </span>
                     {device.rate && (
-                      <span className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      <span className="text-sm font-medium text-base-content/60">
                         Rp {device.rate.toLocaleString("id-ID")} / jam
                       </span>
                     )}
@@ -298,10 +298,10 @@ export default function DeviceDetail() {
                 
                 <div className="mb-8 space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <h3 className="text-sm font-semibold text-base-content">
                       Deskripsi
                     </h3>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-sm text-base-content/60">
                       {device.ps_type === "PS5"
                         ? "Nikmati pengalaman bermain game generasi terbaru dengan resolusi 4K dan loading super cepat."
                         : "Mainkan berbagai game seru dengan teman-teman Anda."}
@@ -311,7 +311,7 @@ export default function DeviceDetail() {
 
                 <button
                   onClick={handleBookingClick}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-brand-600"
+                  className="btn btn-primary w-full"
                 >
                   <CalendarCheck size={18} /> Booking Sekarang
                 </button>
@@ -332,7 +332,7 @@ export default function DeviceDetail() {
           <StepIndicator current={step} />
 
           {bookingError && (
-            <div className="rounded-lg bg-error-50 p-2.5 text-xs text-error-600 dark:bg-error-500/10 dark:text-error-400">
+            <div className="alert alert-error text-xs rounded-lg p-2.5 shadow-sm">
               {bookingError}
             </div>
           )}

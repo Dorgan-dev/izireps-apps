@@ -4,8 +4,7 @@ import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 export default function QrisPaymentStep({
   dpAmount,
   estimatedCost,
-  qrisString, // Jika memakai string QR dinamis, atau bisa diganti image tag langsung
-  qrisAvailable,
+  qrisString,
   onProceedToProof,
   onBack,
 }) {

@@ -14,27 +14,27 @@ import { deviceApi } from "../../api";
 const statusConfig = {
   available: {
     label: "Tersedia",
-    color: "text-success-600 dark:text-success-400",
-    border: "border-success-200 dark:border-success-900",
-    badgeBg: "bg-success-50 dark:bg-success-950/50",
+    color: "text-success",
+    border: "border-success",
+    badgeBg: "badge-success",
   },
   booked: {
     label: "Dibooking",
-    color: "text-brand-600 dark:text-brand-400",
-    border: "border-brand-200 dark:border-brand-900",
-    badgeBg: "bg-brand-50 dark:bg-brand-950/50",
+    color: "text-primary",
+    border: "border-primary",
+    badgeBg: "badge-primary",
   },
   in_use: {
     label: "Digunakan",
-    color: "text-warning-600 dark:text-warning-400",
-    border: "border-warning-200 dark:border-warning-900",
-    badgeBg: "bg-warning-50 dark:bg-warning-950/50",
+    color: "text-warning",
+    border: "border-warning",
+    badgeBg: "badge-warning",
   },
   maintenance: {
     label: "Maintenance",
-    color: "text-error-600 dark:text-error-400",
-    border: "border-error-200 dark:border-error-900",
-    badgeBg: "bg-error-50 dark:bg-error-950/50",
+    color: "text-error",
+    border: "border-error",
+    badgeBg: "badge-error",
   },
 };
 
@@ -55,20 +55,20 @@ function getTypeConfig(psType) {
       return {
         icon: Monitor,
         color: "text-orange-500",
-        bg: "bg-orange-50 dark:bg-orange-950/40",
+        bg: "bg-orange-500/10",
       };
     case "PS5":
       return {
         icon: Tv2,
-        color: "text-success-600 dark:text-success-400",
-        bg: "bg-success-50 dark:bg-success-950/40",
+        color: "text-success",
+        bg: "bg-success/10",
       };
     case "PS4":
     default:
       return {
         icon: Gamepad2,
-        color: "text-brand-500",
-        bg: "bg-brand-50 dark:bg-brand-950/40",
+        color: "text-primary",
+        bg: "bg-primary/10",
       };
   }
 }
@@ -76,12 +76,12 @@ function getTypeConfig(psType) {
 /* ── Skeleton card ─────────────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
-      <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-2 h-4 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-2 h-5 w-28 rounded bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-3 h-3 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto h-6 w-20 rounded-full bg-gray-200 dark:bg-gray-700" />
+    <div className="animate-pulse rounded-2xl border border-base-300 bg-base-100 p-6">
+      <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-base-200" />
+      <div className="mx-auto mb-2 h-4 w-16 rounded-full bg-base-200" />
+      <div className="mx-auto mb-2 h-5 w-28 rounded bg-base-200" />
+      <div className="mx-auto mb-3 h-3 w-24 rounded bg-base-200" />
+      <div className="mx-auto h-6 w-20 rounded-full bg-base-200" />
     </div>
   );
 }
@@ -112,12 +112,12 @@ export default function DeviceList() {
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 py-16 dark:bg-gray-950 sm:py-20">
+    <section className="min-h-screen bg-base-200 py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Back link */}
         <Link
           to="/"
-          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition-colors hover:text-brand-500 dark:text-gray-400"
+          className="mb-8 inline-flex items-center gap-2 text-sm font-medium text-base-content/60 transition-colors hover:text-primary"
         >
           <ArrowLeft size={16} />
           Kembali ke beranda
@@ -125,13 +125,13 @@ export default function DeviceList() {
 
         {/* Header */}
         <div className="mb-10">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-500 dark:text-brand-400">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
             Daftar Perangkat
           </p>
-          <h1 className="mb-3 text-2xl font-bold text-gray-900 dark:text-white sm:text-3xl">
+          <h1 className="mb-3 text-2xl font-bold text-base-content sm:text-3xl">
             Semua unit yang tersedia
           </h1>
-          <p className="max-w-lg text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+          <p className="max-w-lg text-sm leading-relaxed text-base-content/70">
             Lihat ketersediaan seluruh unit konsol PlayStation kami secara
             real-time.
           </p>
@@ -144,30 +144,30 @@ export default function DeviceList() {
               {
                 label: "Total Unit",
                 value: counts.all,
-                color: "text-gray-900 dark:text-white",
+                color: "text-base-content",
               },
               {
                 label: "Tersedia",
                 value: counts.available,
-                color: "text-success-600 dark:text-success-400",
+                color: "text-success",
               },
               {
                 label: "Digunakan",
                 value: counts.in_use,
-                color: "text-warning-600 dark:text-warning-400",
+                color: "text-warning",
               },
               {
                 label: "Maintenance",
                 value: counts.maintenance,
-                color: "text-error-600 dark:text-error-400",
+                color: "text-error",
               },
             ].map(({ label, value, color }) => (
               <div
                 key={label}
-                className="rounded-xl border border-gray-200 bg-white p-4 text-center dark:border-gray-800 dark:bg-gray-900"
+                className="rounded-xl border border-base-300 bg-base-100 p-4 text-center"
               >
                 <p className={`text-2xl font-bold ${color}`}>{value}</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-base-content/60">
                   {label}
                 </p>
               </div>
@@ -184,8 +184,8 @@ export default function DeviceList() {
                 onClick={() => setFilter(key)}
                 className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   filter === key
-                    ? "bg-brand-500 text-white shadow-sm"
-                    : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+                    ? "bg-primary text-primary-content shadow-sm"
+                    : "bg-base-100 text-base-content/70 hover:bg-base-200"
                 }`}
               >
                 {label}
@@ -206,8 +206,8 @@ export default function DeviceList() {
         {/* ── Error state ────────────────────────────────────── */}
         {!loading && error && (
           <div className="flex flex-col items-center gap-3 py-16 text-center">
-            <WifiOff size={40} className="text-gray-400 dark:text-gray-500" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
+            <WifiOff size={40} className="text-base-content/40" />
+            <p className="text-sm text-base-content/60">{error}</p>
             <button
               onClick={() => {
                 setLoading(true);
@@ -218,9 +218,9 @@ export default function DeviceList() {
                   .catch(() => setError("Gagal memuat data perangkat."))
                   .finally(() => setLoading(false));
               }}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+              className="mt-2 btn btn-sm btn-primary"
             >
-              <Loader2 size={14} />
+              <Loader2 size={14} className="animate-spin" />
               Coba lagi
             </button>
           </div>
@@ -238,7 +238,7 @@ export default function DeviceList() {
                 <Link
                   key={d.id}
                   to={`/device/detail/${d.id}`}
-                  className={`group relative overflow-hidden rounded-2xl border bg-white p-6 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md dark:bg-gray-900 ${cfg.border}`}
+                  className={`group relative overflow-hidden rounded-2xl border bg-base-100 p-6 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md ${cfg.border}`}
                 >
                   {/* Icon perangkat */}
                   <div
@@ -255,7 +255,7 @@ export default function DeviceList() {
                   </span>
 
                   {/* Nama perangkat */}
-                  <p className="mb-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                  <p className="mb-1.5 text-sm font-semibold text-base-content">
                     {d.name}
                   </p>
 
@@ -268,7 +268,7 @@ export default function DeviceList() {
 
                   {/* Status badge */}
                   <span
-                    className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium ${cfg.badgeBg} ${cfg.color}`}
+                    className={`badge badge-sm border-none font-medium ${cfg.badgeBg}`}
                   >
                     {cfg.label}
                   </span>
@@ -281,7 +281,7 @@ export default function DeviceList() {
         {/* ── Empty filtered ─────────────────────────────────── */}
         {!loading && !error && filtered.length === 0 && devices.length > 0 && (
           <div className="py-16 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-base-content/60">
               Tidak ada perangkat {filter} ditemukan.
             </p>
           </div>
@@ -290,7 +290,7 @@ export default function DeviceList() {
         {/* ── Empty state ────────────────────────────────────── */}
         {!loading && !error && devices.length === 0 && (
           <div className="py-16 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-base-content/60">
               Belum ada perangkat terdaftar.
             </p>
           </div>

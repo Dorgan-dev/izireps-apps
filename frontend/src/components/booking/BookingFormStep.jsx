@@ -9,7 +9,7 @@ import ClockTimePicker from "../form/ClockTimePicker";
 export default function BookingFormStep({
   formData,
   handleInputChange,
-  timeType,
+  timeType, 
   setTimeType,
   setFormData,
   duration,

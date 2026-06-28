@@ -15,27 +15,27 @@ import SectionHeader from "./SectionHeader";
 const statusConfig = {
   available: {
     label: "Tersedia",
-    color: "text-success-600 dark:text-success-400",
-    border: "border-success-200 dark:border-success-900",
-    badgeBg: "bg-success-50 dark:bg-success-950/50",
+    color: "text-success",
+    border: "border-success",
+    badgeBg: "badge-success",
   },
   booked: {
     label: "Dibooking",
-    color: "text-brand-600 dark:text-brand-400",
-    border: "border-brand-200 dark:border-brand-900",
-    badgeBg: "bg-brand-50 dark:bg-brand-950/50",
+    color: "text-primary",
+    border: "border-primary",
+    badgeBg: "badge-primary",
   },
   in_use: {
     label: "Digunakan",
-    color: "text-warning-600 dark:text-warning-400",
-    border: "border-warning-200 dark:border-warning-900",
-    badgeBg: "bg-warning-50 dark:bg-warning-950/50",
+    color: "text-warning",
+    border: "border-warning",
+    badgeBg: "badge-warning",
   },
   maintenance: {
     label: "Maintenance",
-    color: "text-error-600 dark:text-error-400",
-    border: "border-error-200 dark:border-error-900",
-    badgeBg: "bg-error-50 dark:bg-error-950/50",
+    color: "text-error",
+    border: "border-error",
+    badgeBg: "badge-error",
   },
 };
 
@@ -48,22 +48,22 @@ function getTypeConfig(psType) {
       return {
         icon: Monitor,
         color: "text-orange-500",
-        bg: "bg-orange-50 dark:bg-orange-950/40",
+        bg: "bg-orange-500/10",
         emoji: "🕹️",
       };
     case "PS5":
       return {
         icon: Tv2,
-        color: "text-success-600 dark:text-success-400",
-        bg: "bg-success-50 dark:bg-success-950/40",
+        color: "text-success",
+        bg: "bg-success/10",
         emoji: "🎮",
       };
     case "PS4":
     default:
       return {
         icon: Gamepad2,
-        color: "text-brand-500",
-        bg: "bg-brand-50 dark:bg-brand-950/40",
+        color: "text-primary",
+        bg: "bg-primary/10",
         emoji: "🕹️",
       };
   }
@@ -72,12 +72,12 @@ function getTypeConfig(psType) {
 /* ── Skeleton card loading ─────────────────────────────────────── */
 function SkeletonCard() {
   return (
-    <div className="animate-pulse rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
-      <div className="mx-auto mb-3 h-10 w-10 rounded-xl bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-2 h-3 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-1.5 h-4 w-24 rounded bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto mb-3 h-3 w-20 rounded bg-gray-200 dark:bg-gray-700" />
-      <div className="mx-auto h-6 w-16 rounded-full bg-gray-200 dark:bg-gray-700" />
+    <div className="animate-pulse rounded-2xl border border-base-300 bg-base-100 p-5">
+      <div className="mx-auto mb-3 h-10 w-10 rounded-xl bg-base-200" />
+      <div className="mx-auto mb-2 h-3 w-16 rounded-full bg-base-200" />
+      <div className="mx-auto mb-1.5 h-4 w-24 rounded bg-base-200" />
+      <div className="mx-auto mb-3 h-3 w-20 rounded bg-base-200" />
+      <div className="mx-auto h-6 w-16 rounded-full bg-base-200" />
     </div>
   );
 }
@@ -101,7 +101,7 @@ export default function LandingDevice() {
   }, []);
 
   return (
-    <section id="jadwal" className="bg-gray-50 py-16 dark:bg-gray-950 sm:py-20">
+    <section id="jadwal" className="bg-base-200 py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <SectionHeader
@@ -122,8 +122,8 @@ export default function LandingDevice() {
         {/* ── Error state ────────────────────────────────────── */}
         {!loading && error && (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <WifiOff size={36} className="text-gray-400 dark:text-gray-500" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">{error}</p>
+            <WifiOff size={36} className="text-base-content/40" />
+            <p className="text-sm text-base-content/60">{error}</p>
             <button
               onClick={() => {
                 setLoading(true);
@@ -134,9 +134,9 @@ export default function LandingDevice() {
                   .catch(() => setError("Gagal memuat data perangkat."))
                   .finally(() => setLoading(false));
               }}
-              className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-600"
+              className="mt-1 btn btn-sm btn-primary"
             >
-              <Loader2 size={14} />
+              <Loader2 size={14} className="animate-spin" />
               Coba lagi
             </button>
           </div>
@@ -159,7 +159,7 @@ export default function LandingDevice() {
                   <Link
                     key={d.id}
                     to={`/device/detail/${d.id}`}
-                    className={`group relative overflow-hidden rounded-2xl border bg-white p-5 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md dark:bg-gray-900 ${cfg.border}`}
+                    className={`group relative overflow-hidden rounded-2xl border bg-base-100 p-5 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md ${cfg.border}`}
                   >
                     {/* Icon perangkat */}
                     <div
@@ -176,20 +176,20 @@ export default function LandingDevice() {
                     </span>
 
                     {/* Nama perangkat */}
-                    <p className="mb-1 text-xs font-semibold text-gray-900 dark:text-white">
+                    <p className="mb-1 text-xs font-semibold text-base-content">
                       {d.name}
                     </p>
 
                     {/* Harga per jam */}
                     {d.rate != null && (
-                      <p className="mb-2 text-[10px] text-gray-400 dark:text-gray-500">
+                      <p className="mb-2 text-[10px] text-base-content/60">
                         Rp {d.rate.toLocaleString("id-ID")} / jam
                       </p>
                     )}
 
                     {/* Status badge */}
                     <span
-                      className={`inline-block rounded-full px-2.5 py-0.5 text-[10px] font-medium ${cfg.badgeBg} ${cfg.color}`}
+                      className={`badge badge-sm border-none font-medium ${cfg.badgeBg}`}
                     >
                       {cfg.label}
                     </span>
@@ -214,7 +214,7 @@ export default function LandingDevice() {
             <div className="mt-8 text-center">
               <Link
                 to="/devices"
-                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3 text-sm font-semibold text-gray-700 shadow-theme-xs transition-all hover:-translate-y-0.5 hover:shadow-theme-md dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"
+                className="btn btn-outline"
               >
                 Lihat Semua Perangkat
                 <ArrowRight
@@ -229,7 +229,7 @@ export default function LandingDevice() {
         {/* ── Empty state ────────────────────────────────────── */}
         {!loading && !error && devices.length === 0 && (
           <div className="py-12 text-center">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-base-content/60">
               Belum ada perangkat terdaftar.
             </p>
           </div>

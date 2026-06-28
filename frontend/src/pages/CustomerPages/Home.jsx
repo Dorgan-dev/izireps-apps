@@ -5,7 +5,7 @@ import LandingCTA from "../../components/landing/LandingCTA";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white font-outfit text-gray-900 dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen bg-transparent font-outfit">
       <main>
         <LandingHero />
         <LandingFeatures />

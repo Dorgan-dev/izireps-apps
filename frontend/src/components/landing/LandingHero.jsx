@@ -7,7 +7,7 @@ export default function LandingHero() {
   return (
     <section
       id="home"
-      className="relative flex min-h-[100dvh] w-full items-center overflow-hidden bg-white pt-20 pb-12 dark:bg-gray-900 sm:pt-24 lg:min-h-screen lg:pt-28 lg:pb-20"
+      className="relative flex min-h-[100dvh] w-full items-center overflow-hidden bg-base-100 pt-20 pb-12 sm:pt-24 lg:min-h-screen lg:pt-28 lg:pb-20"
     >
       {/* Background */}
       <div
@@ -24,17 +24,17 @@ export default function LandingHero() {
         <div className="flex flex-col items-center gap-10 lg:flex-row lg:justify-between lg:gap-16">
           {/* TEXT */}
           <div className="order-2 flex flex-col items-center text-center lg:order-1 lg:max-w-2xl lg:items-start lg:text-left">
-            <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-6xl xl:text-6xl">
+            <h1 className="text-4xl font-extrabold tracking-tight text-base-content sm:text-5xl lg:text-6xl xl:text-6xl">
               Booking PlayStation
               <br />
-              jadi lebih <span className="text-brand-500">iZi</span>
+              jadi lebih <span className="text-primary">iZi</span>
             </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-gray-500 dark:text-gray-400 sm:text-lg lg:text-xl">
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-base-content/80 sm:text-lg lg:text-xl">
               Mau main PS tapi bingung cari tempat kosong?{" "}
               <br className="hidden sm:inline" />
               Tenang, kan ada iZi. <br />
-              <span className="font-semibold text-emerald-500 dark:text-emerald-400">
+              <span className="font-semibold text-accent">
                 Booking gampang, hati senang.
               </span>
             </p>
@@ -43,7 +43,7 @@ export default function LandingHero() {
             <div className="mt-8 flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row lg:justify-start">
               <button
                 onClick={() => navigate("/devices")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-500 px-6 py-3.5 text-sm font-semibold text-white shadow-md transition-all hover:bg-brand-600 hover:shadow-lg sm:w-auto"
+                className="btn btn-primary sm:w-auto"
               >
                 <CalendarCheck size={18} />
                 Mulai Booking
@@ -51,7 +51,7 @@ export default function LandingHero() {
 
               <button
                 onClick={() => navigate("/schedule")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 bg-white px-6 py-3.5 text-sm font-semibold text-gray-700 shadow-sm transition-all hover:bg-gray-50 dark:border-gray-700 dark:bg-white/[0.03] dark:text-gray-300 dark:hover:bg-white/[0.07] sm:w-auto"
+                className="btn btn-outline sm:w-auto"
               >
                 Lihat Jadwal
                 <ArrowRight size={16} />
@@ -62,8 +62,8 @@ export default function LandingHero() {
           {/* IMAGE */}
           <div className="order-1 w-full lg:order-2 lg:w-1/2">
             <div className="relative mx-auto w-full max-w-full sm:max-w-2xl lg:max-w-xl xl:max-w-2xl transition-transform duration-300 hover:scale-[1.02]">
-              <div className="relative rounded-2xl border border-gray-200 bg-gray-50/60 p-3 shadow-xl backdrop-blur-sm dark:border-gray-800 dark:bg-gray-800/30">
-                <div className="absolute -left-px -top-px h-10 w-10 rounded-tl-2xl border-l border-t border-brand-500/40" />
+              <div className="relative rounded-2xl border border-base-300 bg-base-200/50 p-3 shadow-xl backdrop-blur-sm">
+                <div className="absolute -left-px -top-px h-10 w-10 rounded-tl-2xl border-l border-t border-primary/40" />
 
                 <img
                   src="/images/izi1.png"
