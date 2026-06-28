@@ -23,7 +23,6 @@ const OwnerCashiers = lazy(() => import("../pages/OwnerPages/Cashiers"));
 const OwnerBookings = lazy(() => import("../pages/OwnerPages/Bookings"));
 const OwnerFnb = lazy(() => import("../pages/OwnerPages/Fnb"));
 const OwnerReports = lazy(() => import("../pages/OwnerPages/Reports"));
-const OwnerRevenue = lazy(() => import("../pages/OwnerPages/Revenue"));
 const OwnerSettings = lazy(() => import("../pages/OwnerPages/Settings"));
 
 const CashierLayout = lazy(() => import("../layouts/cashier/CashierLayout"));
@@ -104,7 +103,6 @@ const router = createBrowserRouter([
               { path: "bookings", element: <S><OwnerBookings /></S> },
               { path: "fnb", element: <S><OwnerFnb /></S> },
               { path: "reports", element: <S><OwnerReports /></S> },
-              { path: "revenue", element: <S><OwnerRevenue /></S> },
               { path: "settings", element: <S><OwnerSettings /></S> },
               { path: "profile", element: <S><UserProfile /></S> },
             ],

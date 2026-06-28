@@ -10,8 +10,8 @@ export default function UserProfiles() {
   return (
     <>
       <PageMeta
-        title="React.js Profile Dashboard | TailAdmin - Next.js Admin Dashboard Template"
-        description="This is React.js Profile Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+        title="React.js Profile Dashboard | IZIReps - Next.js Admin Dashboard Template"
+        description="This is React.js Profile Dashboard page for IZIReps - React.js Tailwind CSS Admin Dashboard Template"
       />
 
       <PageBreadcrumb items={[{ label: "Profile", path: "/user-profiles" }]} />

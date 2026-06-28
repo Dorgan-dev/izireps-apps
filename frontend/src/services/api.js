@@ -152,8 +152,12 @@ export const reportsApi = {
 
   devices: (params) => api.get("/reports/devices", { params }),
 
-  export: (type, params) =>
-    api.get(`/reports/export/${type}`, { params, responseType: "blob" }),
+  fnb: (params) => api.get("/reports/fnb", { params }),
+
+  cashiers: (params) => api.get("/reports/cashiers", { params }),
+
+  export: (params) =>
+    api.get("/reports/export", { params, responseType: "blob" }),
 };
 
 // ─── Owner Dashboard ─────────────────────────────────────────────────────

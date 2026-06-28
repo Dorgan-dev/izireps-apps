@@ -159,24 +159,112 @@ class ReportController extends Controller
     }
 
     /**
-     * GET /api/reports/export/{type}
-     * Export laporan ke Excel atau PDF.
+     * GET /api/reports/fnb
+     * Statistik penjualan F&B dikelompokkan per item.
      *
      * Query params: from, to
-     * Path params: type (excel|pdf)
      */
-    public function export(Request $request, string $type)
+    public function fnb(Request $request)
     {
         $request->validate([
             'from' => 'required|date',
             'to'   => 'required|date|after_or_equal:from',
         ]);
 
-        if (! in_array($type, ['excel', 'pdf'])) {
-            return response()->json(['message' => 'Tipe export tidak valid. Gunakan excel atau pdf.'], 422);
-        }
+        $rows = \App\Models\TransactionItem::select(
+                'item_name',
+                DB::raw('SUM(quantity) as total_qty'),
+                DB::raw('SUM(subtotal) as total_revenue'),
+                DB::raw('AVG(unit_price) as avg_price')
+            )
+            ->whereHas('transaction', function ($q) use ($request) {
+                $q->whereBetween(DB::raw('DATE(paid_at)'), [$request->from, $request->to])
+                  ->where('status', 'paid');
+            })
+            ->groupBy('item_name')
+            ->orderByDesc('total_revenue')
+            ->get()
+            ->map(fn ($r) => [
+                'item_name'     => $r->item_name,
+                'total_qty'     => (int) $r->total_qty,
+                'total_revenue' => (int) $r->total_revenue,
+                'avg_price'     => (int) round($r->avg_price),
+            ]);
 
-        // Ambil data transaksi untuk export
+        // Total FnB revenue in range
+        $totalFnb = Transaction::whereBetween(DB::raw('DATE(paid_at)'), [$request->from, $request->to])
+            ->where('status', 'paid')
+            ->sum('fnb_total');
+
+        return response()->json([
+            'data' => [
+                'items'     => $rows,
+                'total_fnb' => (int) $totalFnb,
+            ],
+        ]);
+    }
+
+    /**
+     * GET /api/reports/cashiers
+     * Statistik performa kasir dalam rentang tanggal.
+     *
+     * Query params: from, to
+     */
+    public function cashiers(Request $request)
+    {
+        $request->validate([
+            'from' => 'required|date',
+            'to'   => 'required|date|after_or_equal:from',
+        ]);
+
+        $rows = Transaction::select(
+                'cashier_id',
+                DB::raw('COUNT(*) as total_transactions'),
+                DB::raw('SUM(grand_total) as total_revenue'),
+                DB::raw('SUM(gaming_total) as gaming_revenue'),
+                DB::raw('SUM(fnb_total) as fnb_revenue')
+            )
+            ->with('cashier:id,name')
+            ->whereBetween(DB::raw('DATE(paid_at)'), [$request->from, $request->to])
+            ->where('status', 'paid')
+            ->groupBy('cashier_id')
+            ->orderByDesc('total_revenue')
+            ->get()
+            ->map(fn ($r) => [
+                'cashier_id'         => $r->cashier_id,
+                'cashier_name'       => $r->cashier->name ?? '-',
+                'total_transactions' => (int) $r->total_transactions,
+                'total_revenue'      => (int) $r->total_revenue,
+                'gaming_revenue'     => (int) $r->gaming_revenue,
+                'fnb_revenue'        => (int) $r->fnb_revenue,
+            ]);
+
+        return response()->json([
+            'data' => $rows,
+        ]);
+    }
+
+    /**
+     * GET /api/reports/export
+     * Export laporan ke Excel atau PDF.
+     *
+     * Query params: from, to, type (excel|pdf)
+     */
+    public function export(Request $request)
+    {
+        $request->validate([
+            'from'   => 'required|date',
+            'to'     => 'required|date|after_or_equal:from',
+            'type'   => 'required|in:revenue,devices,fnb,cashiers',
+            'format' => 'required|in:excel,pdf',
+        ]);
+
+        $type = $request->query('type', 'revenue');
+        $format = $request->query('format', 'excel');
+
+        // Untuk saat ini, kita baru mendemonstrasikan export transaksi (revenue)
+        // Tab lain bisa ditambahkan logikanya di sini nanti.
+        
         $transactions = Transaction::with([
                 'session.device:id,name,ps_type',
                 'session.customer:id,name,phone',
@@ -188,7 +276,7 @@ class ReportController extends Controller
             ->orderBy('paid_at')
             ->get();
 
-        if ($type === 'excel') {
+        if ($format === 'excel') {
             return $this->exportExcel($transactions, $request->from, $request->to);
         }
 

@@ -6,7 +6,7 @@ const FOOTER_LINKS = {
     { label: "Beranda", href: "/" },
     { label: "Tentang Kami", href: "/about" },
     { label: "Lihat Jadwal", href: "/schedule" },
-    { label: "Ulasan", href: "/contact" },
+    { label: "Ulasan", href: "" },
   ],
   Layanan: [
     { label: "Booking Online" },
@@ -55,12 +55,8 @@ export default function LandingFooter() {
             </p>
             <div className="flex gap-2">
               {SOCIAL.map(({ icon: Icon, label, href }) => (
-                <a
-                  key={label}
-                  href={href}
-                  aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-base-300 text-base-content/70 transition-colors hover:border-primary hover:bg-primary hover:text-primary-content"
-                >
+                <a key={label} href={href} aria-label={label} className="flex h-9 w-9 items-center justify-center rounded-lg border border-base-300
+                text-base-content/70 transition-colors hover:border-primary hover:bg-primary hover:text-primary-content">
                   <Icon size={16} />
                 </a>
               ))}
@@ -76,12 +72,7 @@ export default function LandingFooter() {
               <ul className="space-y-2">
                 {links.map(({ label, href }) => (
                   <li key={label}>
-                    <a
-                      href={href}
-                      className="text-sm text-base-content/80 transition-colors hover:text-primary"
-                    >
-                      {label}
-                    </a>
+                    <a href={href} className="text-sm text-base-content/80 transition-colors hover:text-primary">{label}</a>
                   </li>
                 ))}
               </ul>

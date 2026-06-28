@@ -15,8 +15,8 @@ export default function FormElements() {
   return (
     <div>
       <PageMeta
-        title="React.js Form Elements Dashboard | TailAdmin - React.js Admin Dashboard Template"
-        description="This is React.js Form Elements  Dashboard page for TailAdmin - React.js Tailwind CSS Admin Dashboard Template"
+        title="React.js Form Elements Dashboard | IZIReps - React.js Admin Dashboard Template"
+        description="This is React.js Form Elements  Dashboard page for IZIReps - React.js Tailwind CSS Admin Dashboard Template"
       />
 
       <PageBreadcrumb

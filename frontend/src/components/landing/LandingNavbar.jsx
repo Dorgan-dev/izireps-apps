@@ -55,7 +55,7 @@ export default function LandingNavbar({ theme, setTheme, themes }) {
                 <ul tabIndex={0} className="dropdown-content bg-base-200 text-base-content z-[1] p-2 shadow-2xl rounded-box w-52 max-h-60 overflow-y-auto">
                   {themes?.map((t) => (
                     <li key={t}>
-                      <button 
+                      <button
                         className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-base-300 ${theme === t ? 'font-bold bg-base-300' : ''}`}
                         onClick={() => setTheme(t)}
                       >
@@ -85,7 +85,7 @@ export default function LandingNavbar({ theme, setTheme, themes }) {
                 <ul tabIndex={0} className="dropdown-content bg-base-200 text-base-content z-[1] p-2 shadow-2xl rounded-box w-52 max-h-60 overflow-y-auto">
                   {themes?.map((t) => (
                     <li key={t}>
-                      <button 
+                      <button
                         className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-base-300 ${theme === t ? 'font-bold bg-base-300' : ''}`}
                         onClick={() => setTheme(t)}
                       >
@@ -107,7 +107,7 @@ export default function LandingNavbar({ theme, setTheme, themes }) {
             <ul tabIndex={0} className="dropdown-content bg-base-200 text-base-content z-[1] p-2 shadow-2xl rounded-box w-52 max-h-60 overflow-y-auto">
               {themes?.map((t) => (
                 <li key={t}>
-                  <button 
+                  <button
                     className={`w-full text-left px-4 py-2 text-sm rounded-lg hover:bg-base-300 ${theme === t ? 'font-bold bg-base-300' : ''}`}
                     onClick={() => setTheme(t)}
                   >
