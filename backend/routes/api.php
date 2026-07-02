@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\CustomerAuthController;
 use App\Http\Controllers\Api\OwnerDashboardController;
 use App\Http\Controllers\Api\CashierDashboardController;
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\Api\BookingHistoryController;
 /*
 |--------------------------------------------------------------------------
 | API Routes — Billing Rental PlayStation
@@ -70,6 +70,10 @@ Route::post('customer-auth/register', [CustomerAuthController::class, 'register'
 Route::middleware('auth:sanctum,customer')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
+
+     // Riwayat Booking Customer
+    Route::get('customer/bookings/history', [BookingHistoryController::class, 'index']);
+    Route::get('customer/bookings/history/{booking}', [BookingHistoryController::class, 'show']);
 });
 
 

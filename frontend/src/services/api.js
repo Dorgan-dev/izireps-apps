@@ -184,3 +184,10 @@ export const settingsApi = {
   /** GET /public/settings — informasi publik (nama toko) */
   public: () => api.get("/public/settings"),
 };
+
+// ─── Booking History Customer ─────────────────────────────────────────────
+
+export const bookingHistoryApi = {
+  list: () => api.get("/customer/bookings/history"),
+  detail: (id) => api.get(`/customer/bookings/history/${id}`),
+};
