@@ -14,6 +14,7 @@ const PublicDeviceList = lazy(() => import("../pages/CustomerPages/DeviceList"))
 const PublicDeviceDetail = lazy(() => import("../pages/CustomerPages/DeviceDetail"));
 const UserProfile = lazy(() => import("../pages/SharedPages/UserProfiles")); // 👈 Nama variabelnya UserProfile
 const DeviceSchedule = lazy(() => import("../pages/CustomerPages/Schedule"));
+const CustomerHistory = lazy(() => import("../pages/CustomerPages/History"));
 
 const OwnerLayout = lazy(() => import("../layouts/owner/OwnerLayout"));
 const OwnerDashboard = lazy(() => import("../pages/OwnerPages/Dashboard"));
@@ -78,7 +79,8 @@ const router = createBrowserRouter([
           {
             element: <RequireAuth />,
             children: [
-              { path: "profile", element: <S><UserProfile /></S> }
+              { path: "profile", element: <S><UserProfile /></S> },
+              { path: "my-bookings", element: <S><CustomerHistory /></S> },
             ]
           },
           { path: "schedule", element: <S><DeviceSchedule /></S> },

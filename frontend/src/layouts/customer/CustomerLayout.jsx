@@ -21,7 +21,7 @@ export default function PublicLayout() {
   }, [theme]);
 
   return (
-    <div data-theme={theme} className="bg-base-100 text-base-content min-h-screen font-outfit transition-colors duration-300">
+    <div data-theme={theme} className="bg-base-200 text-base-content min-h-screen font-outfit transition-colors duration-300">
       {/* Navbar menetap di atas */}
       <LandingNavbar theme={theme} setTheme={setTheme} themes={DAISY_THEMES} />
 

@@ -76,4 +76,45 @@ class CustomerController extends Controller
             'data' => $bookings,
         ]);
     }
+
+    /**
+     * GET /api/customer/bookings
+     * Pelanggan — riwayat booking pelanggan itu sendiri
+     */
+    public function myBookings(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (!$user instanceof Customer) {
+            return response()->json(['message' => 'Unauthorized. Hanya untuk customer.'], 403);
+        }
+
+        $bookings = $user
+            ->bookings()
+            ->with(['device:id,name,ps_type'])
+            ->latest('created_at')
+            ->get();
+
+        return response()->json([
+            'data' => $bookings,
+        ]);
+    }
+
+    /**
+     * GET /api/customer/bookings/{booking}/proof
+     * Pelanggan melihat bukti DP miliknya sendiri
+     */
+    public function myBookingProof(Request $request, \App\Models\Booking $booking)
+    {
+        $user = $request->user();
+        if (!$user instanceof Customer || $booking->customer_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $path = storage_path('app/private/' . $booking->dp_proof_file);
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
+    }
 }

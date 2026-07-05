@@ -6,7 +6,7 @@ export default function LandingCTA() {
   return (
     <>
       {/* ── Reviews Section ── */}
-      <section id="kontak" className="bg-base-100 py-16 sm:py-20">
+      <section id="kontak" className="bg-base-100 py-16 sm:py-20 rounded-2xl">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeader
             label="Ulasan Pelanggan"

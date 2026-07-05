@@ -67,9 +67,9 @@ export default function UserDropdown() {
     <div className="relative">
       <button
         onClick={toggleDropdown}
-        className="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400"
+        className="flex items-center text-base-content dropdown-toggle"
       >
-        <div className="mr-3 flex h-11 w-11 items-center justify-center overflow-hidden rounded-full">
+        <div className="mr-3 flex h-10 w-10 items-center justify-center overflow-hidden rounded-full">
           {isAuthenticated && user?.avatar ? (
             <img
               src={user.avatar}
@@ -77,7 +77,7 @@ export default function UserDropdown() {
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-brand-500 font-semibold text-white">
+            <div className="flex h-full w-full items-center justify-center bg-brand-500 font-semibold text-base-content">
               {user?.name?.charAt(0).toUpperCase() || "U"}
             </div>
           )}

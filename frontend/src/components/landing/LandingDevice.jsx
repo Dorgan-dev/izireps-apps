@@ -47,8 +47,8 @@ function getTypeConfig(psType) {
     case "PS3":
       return {
         icon: Monitor,
-        color: "text-orange-500",
-        bg: "bg-orange-500/10",
+        color: "text-warning",
+        bg: "bg-warning/10",
         emoji: "🕹️",
       };
     case "PS5":
@@ -101,7 +101,7 @@ export default function LandingDevice() {
   }, []);
 
   return (
-    <section id="jadwal" className="bg-base-200 py-16 sm:py-20">
+    <section id="jadwal" className="bg-base-100 my-6 py-16 sm:py-20 rounded-2xl">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <SectionHeader
@@ -145,10 +145,6 @@ export default function LandingDevice() {
         {/* ── Device cards ───────────────────────────────────── */}
         {!loading && !error && devices.length > 0 && (
           <>
-            {/*
-             Mobile  : 2 kolom, tampilkan hanya 2 card
-             Desktop : 4 kolom, tampilkan hanya 4 card
-            */}
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {devices.slice(0, 4).map((d) => {
                 const cfg = statusConfig[d.status] ?? defaultStatus;
@@ -159,19 +155,14 @@ export default function LandingDevice() {
                   <Link
                     key={d.id}
                     to={`/device/detail/${d.id}`}
-                    className={`group relative overflow-hidden rounded-2xl border bg-base-100 p-5 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md ${cfg.border}`}
-                  >
+                    className={`group relative overflow-hidden rounded-2xl border bg-base-100 p-5 text-center shadow-theme-xs transition-all hover:-translate-y-1 hover:shadow-theme-md ${cfg.border}`}>
                     {/* Icon perangkat */}
-                    <div
-                      className={`mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${typeConfig.bg}`}
-                    >
+                    <div className={`mx-auto mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${typeConfig.bg}`}>
                       <Icon size={20} className={typeConfig.color} />
                     </div>
 
                     {/* Badge tipe konsol */}
-                    <span
-                      className={`mb-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${typeConfig.bg} ${typeConfig.color}`}
-                    >
+                    <span className={`mb-2 inline-block rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${typeConfig.bg} ${typeConfig.color}`}>
                       {d.ps_type}
                     </span>
 
@@ -188,9 +179,7 @@ export default function LandingDevice() {
                     )}
 
                     {/* Status badge */}
-                    <span
-                      className={`badge badge-sm border-none font-medium ${cfg.badgeBg}`}
-                    >
+                    <span className={`badge badge-sm border-none font-medium ${cfg.badgeBg}`}>
                       {cfg.label}
                     </span>
 
@@ -201,26 +190,18 @@ export default function LandingDevice() {
               })}
 
               {/* Sembunyikan card ke-3 dan ke-4 di mobile */}
-              <style>{`
-                @media (max-width: 639px) {
+              <style>{`@media (max-width: 639px) {
                   #jadwal .grid > a:nth-child(n+3) {
                     display: none;
                   }
-                }
-              `}</style>
+                }`}</style>
             </div>
 
             {/* Link "Lihat Semua" */}
             <div className="mt-8 text-center">
-              <Link
-                to="/devices"
-                className="btn btn-outline"
-              >
+              <Link to="/devices" className="btn btn-outline">
                 Lihat Semua Perangkat
-                <ArrowRight
-                  size={16}
-                  className="transition-transform group-hover:translate-x-1"
-                />
+                <ArrowRight size={16} className="transition-transform group-hover:translate-x-1"/>
               </Link>
             </div>
           </>

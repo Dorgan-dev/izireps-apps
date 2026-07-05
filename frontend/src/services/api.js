@@ -37,6 +37,9 @@ export const customerAuthApi = {
   logout: () => api.post("/customer-auth/logout"),
   me: () => api.get("/customer-auth/me"),
   publicRegister: (data) => api.post("customer-auth/register", data),
+  myBookings: () => api.get("/customer/bookings"),
+  myBookingProof: (id) => api.get(`/customer/bookings/${id}/proof`, { responseType: 'blob' }),
+  publicCancel: (id) => api.patch(`/public/bookings/${id}/cancel`),
 };
 
 // ─── Devices ──────────────────────────────────────────────────────────────────

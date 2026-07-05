@@ -42,8 +42,8 @@ class DeviceController extends Controller
 
         $bookings = Booking::where('device_id', $device->id)
             ->whereDate('booking_date', $date)
-            ->whereIn('status', ['confirmed', 'in_use'])
-            ->get(['id', 'start_time', 'end_time', 'status']);
+            ->whereIn('status', ['confirmed', 'in_use', 'pending'])
+            ->get(['id', 'start_time', 'end_time', 'expires_at', 'status']);
 
         return response()->json(['data' => $bookings]);
     }

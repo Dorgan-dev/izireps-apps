@@ -48,8 +48,8 @@ Route::prefix('public')->group(function () {
     Route::get('bookings/{booking}', [BookingController::class, 'showPublic']);
     Route::patch('bookings/{booking}/cancel', [BookingController::class, 'cancelByCustomer']);
 
-    // Settings (info publik saja)
-    Route::get('settings', [SettingController::class, 'publicIndex']);
+    // // Settings (info publik saja)
+    // Route::get('settings', [SettingController::class, 'publicIndex']);
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -70,6 +70,8 @@ Route::post('customer-auth/register', [CustomerAuthController::class, 'register'
 Route::middleware('auth:sanctum,customer')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
+    Route::get('customer/bookings', [CustomerController::class, 'myBookings']);
+    Route::get('customer/bookings/{booking}/proof', [CustomerController::class, 'myBookingProof']);
 });
 
 
