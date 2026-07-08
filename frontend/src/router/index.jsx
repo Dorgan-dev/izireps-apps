@@ -12,7 +12,7 @@ const PublicAbout = lazy(() => import("../pages/CustomerPages/About"));
 const PublicContact = lazy(() => import("../pages/CustomerPages/Contact"));
 const PublicDeviceList = lazy(() => import("../pages/CustomerPages/DeviceList"));
 const PublicDeviceDetail = lazy(() => import("../pages/CustomerPages/DeviceDetail"));
-const UserProfile = lazy(() => import("../pages/SharedPages/UserProfiles")); // 👈 Nama variabelnya UserProfile
+const UserProfile = lazy(() => import("../pages/SharedPages/UserProfiles"));
 const DeviceSchedule = lazy(() => import("../pages/CustomerPages/Schedule"));
 const CustomerHistory = lazy(() => import("../pages/CustomerPages/History"));
 

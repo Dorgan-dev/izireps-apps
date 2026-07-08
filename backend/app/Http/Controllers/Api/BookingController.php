@@ -65,15 +65,11 @@ class BookingController extends Controller
                 : 0;
             $dpAmount = round($estimatedCost / 2, 2);
         } else {
-            // free_play: juga cek konflik sebelum tampilkan QRIS
             $this->service->checkConflict($device, $data['booking_date'], $data['start_time'], null);
-
-            // DP = 1 jam tarif
             $estimatedCost = null;
             $dpAmount = $rate ? (float) $rate->price_per_hour : 0;
         }
 
-        // Generate QRIS dengan nominal DP
         $baseQris = Setting::get('qris_string');
         $qrisString = null;
 
