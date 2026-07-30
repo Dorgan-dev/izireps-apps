@@ -3,6 +3,7 @@ import { Outlet } from "react-router";
 import AppHeader from "../Header";
 import Backdrop from "../Backdrop";
 import AppSidebar from "../Sidebar";
+import TvRemoteModal from "../../components/TvRemoteModal";
 
 const LayoutContent = () => {
   const { isExpanded, isHovered, isMobileOpen } = useSidebar();
@@ -28,6 +29,7 @@ const AppLayout = () => {
   return (
     <SidebarProvider>
       <LayoutContent />
+      <TvRemoteModal />
     </SidebarProvider>
   );
 };

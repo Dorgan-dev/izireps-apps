@@ -2,9 +2,10 @@ import { useCallback } from "react";
 import { Link, useLocation } from "react-router";
 import { FiPlayCircle } from "react-icons/fi";
 import { TbLayoutDashboard, TbCalendarEvent, TbReceipt, TbCoffee, TbDeviceDesktopQuestion,
-  TbTrendingUp, TbDeviceGamepad, TbBasket, TbUserCog, TbSettings } from "react-icons/tb";
+  TbTrendingUp, TbDeviceGamepad, TbBasket, TbUserCog, TbSettings, TbDeviceRemote } from "react-icons/tb";
 import { HorizontaLDots } from "../icons";
 import { useSidebar } from "../context/SidebarContext";
+import { useTvRemoteStore } from "../store/tvRemoteStore";
 
 // ==========================================
 // DATA MENU KASIR (CASHIER)
@@ -65,6 +66,11 @@ const cashierMenu = [
         name: "Status Perangkat",
         path: "/cashier/devices",
       },
+      {
+        icon: <TbDeviceRemote className="size-5" />,
+        name: "Remot TV",
+        action: "tv-remote", // Menggunakan action, bukan path
+      }
     ],
   },
 ];
@@ -119,6 +125,11 @@ const ownerMenu = [
         name: "Pengaturan",
         path: "/owner/settings",
       },
+      {
+        icon: <TbDeviceRemote className="size-5" />,
+        name: "Remot TV",
+        action: "tv-remote", // Modal trigger
+      },
     ],
   },
 ];
@@ -134,11 +145,21 @@ const AppSidebar = () => {
   // Fix: Ditambahkan location.search agar akurat membaca parameter query (?tab=...) milik menu Owner
   const isActive = useCallback(
     (path) => {
+      // Jika path kosong (misalnya tombol modal), jangan anggap aktif
+      if (!path) return false;
       // Exact match or starts-with (so /owner/reports stays active for all tabs)
       return location.pathname === path || location.pathname.startsWith(path + "/");
     },
     [location.pathname],
   );
+
+  const { open: openTvRemote } = useTvRemoteStore();
+
+  const handleMenuClick = (nav) => {
+    if (nav.action === 'tv-remote') {
+      openTvRemote();
+    }
+  };
 
   const renderMenuItems = (items, menuType) => (
     <ul className="flex flex-col gap-4">
@@ -156,7 +177,7 @@ const AppSidebar = () => {
               )}
             </button>
           ) : (
-            nav.path && (
+            nav.path ? (
               <Link
                 to={nav.path}
                 className={`menu-item group ${isActive(nav.path) ? "menu-item-active" : "menu-item-inactive"}`}>
@@ -174,6 +195,17 @@ const AppSidebar = () => {
                   </span>
                 )}
               </Link>
+            ) : (
+              <button
+                onClick={() => handleMenuClick(nav)}
+                className={`menu-item group menu-item-inactive w-full cursor-pointer text-left ${!isExpanded && !isHovered ? "justify-center" : "justify-start"}`}>
+                <span className="menu-item-icon-size menu-item-icon-inactive">
+                  {nav.icon}
+                </span>
+                {(isExpanded || isHovered || isMobileOpen) && (
+                  <span className="menu-item-text">{nav.name}</span>
+                )}
+              </button>
             )
           )}
         </li>

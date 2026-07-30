@@ -187,3 +187,12 @@ export const settingsApi = {
   /** GET /public/settings — informasi publik (nama toko) */
   public: () => api.get("/public/settings"),
 };
+
+// ─── TV Remote ─────────────────────────────────────────────────────────────
+
+export const tvRemoteApi = {
+  sendKey: (deviceId, key) => api.post("/tv/send-key", { device_id: deviceId, key }),
+  power: (deviceId, action) => api.post("/tv/power", { device_id: deviceId, action }),
+  status: (deviceId) => api.get(`/tv/${deviceId}/status`),
+};
+

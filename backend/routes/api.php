@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\CustomerAuthController;
 use App\Http\Controllers\Api\OwnerDashboardController;
 use App\Http\Controllers\Api\CashierDashboardController;
+use App\Http\Controllers\Api\TvRemoteController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -138,6 +139,12 @@ Route::middleware(['auth:sanctum', 'role:cashier,owner'])->group(function () {
     // F&B — write (kasir & owner)
     Route::post('fnb-items', [FnbItemController::class, 'store']);
     Route::put('fnb-items/{item}', [FnbItemController::class, 'update']);
+
+    // TV Remote — kasir & owner
+    Route::prefix('tv')->group(function () {
+        Route::post('send-key', [TvRemoteController::class, 'sendKey']);
+        Route::get('{device}/status', [TvRemoteController::class, 'status']);
+    });
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -185,4 +192,7 @@ Route::middleware(['auth:sanctum', 'role:owner'])->group(function () {
     // Settings — hanya owner yang bisa baca QRIS string & mengubah
     Route::get('settings', [SettingController::class, 'index']);
     Route::put('settings', [SettingController::class, 'update']);
+
+    // TV Remote — manual power control (hanya owner)
+    Route::post('tv/power', [TvRemoteController::class, 'power']);
 });

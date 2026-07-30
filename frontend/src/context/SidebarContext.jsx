@@ -60,8 +60,7 @@ export const SidebarProvider = ({ children }) => {
         setIsHovered,
         setActiveItem,
         toggleSubmenu,
-      }}
-    >
+      }}>
       {children}
     </SidebarContext.Provider>
   );

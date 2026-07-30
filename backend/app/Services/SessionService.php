@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 
 class SessionService
 {
+    public function __construct(protected TvBridgeService $tvBridge) {}
+
     /**
      * Mulai sesi walk-in (pelanggan datang langsung).
      */
@@ -53,6 +55,11 @@ class SessionService
 
             // Update status perangkat
             $this->updateDeviceStatus($device, DeviceStatus::InUse, $cashier, 'Sesi walk-in dimulai');
+
+            // OTOMATIS: Nyalakan TV
+            if ($device->tv_mac_address && $device->tv) {
+                $this->tvBridge->power($device->tv_mac_address, $device->tv, 'ON');
+            }
 
             return $session->load(['device', 'customer', 'transaction']);
         });
@@ -98,8 +105,26 @@ class SessionService
             $booking->update(['status' => BookingStatus::InUse]);
             $this->updateDeviceStatus($booking->device, DeviceStatus::InUse, $cashier, 'Sesi booking dimulai');
 
+            // OTOMATIS: Nyalakan TV
+            if ($booking->device->tv_mac_address && $booking->device->tv) {
+                $this->tvBridge->power($booking->device->tv_mac_address, $booking->device->tv, 'ON');
+            }
+
             return $session->load(['device', 'customer', 'booking', 'transaction']);
         });
+    }
+
+    /**
+     * Tandai sesi sebagai waktu habis.
+     */
+    public function markTimeUp(PlaySession $session): void
+    {
+        $session->update(['status' => SessionStatus::TimeUp]);
+
+        // OTOMATIS: Matikan TV karena waktu habis
+        if ($session->device->tv_mac_address && $session->device->tv) {
+            $this->tvBridge->power($session->device->tv_mac_address, $session->device->tv, 'OFF');
+        }
     }
 
     /**
@@ -223,6 +248,11 @@ class SessionService
                 $cashier,
                 'Sesi selesai - checkout'
             );
+
+            // OTOMATIS: Matikan TV saat checkout
+            if ($session->device->tv_mac_address && $session->device->tv) {
+                $this->tvBridge->power($session->device->tv_mac_address, $session->device->tv, 'OFF');
+            }
 
             return $transaction->fresh(['items', 'session.device', 'session.customer', 'cashier']);
         });
