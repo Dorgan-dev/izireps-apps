@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Gamepad2, Menu, X } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
-import UserDropdown from "../header/UserDropdown";
 
 const NAV_LINKS = [
   { label: "Beranda", href: "/" },
@@ -107,9 +106,7 @@ export default function LandingNavbar({ theme, setTheme, themes }) {
                 Masuk
               </button>
             </>
-          ) : (
-            <UserDropdown />
-          )}
+          ) : (<></>)}
         </div>
 
         {/* Mobile: theme + hamburger */}
@@ -161,11 +158,7 @@ export default function LandingNavbar({ theme, setTheme, themes }) {
                     Masuk
                   </button>
                 </>
-              ) : (
-                <div className="flex justify-center w-full">
-                  <UserDropdown />
-                </div>
-              )}
+              ) : (<></>)}
             </div>
           </nav>
         </div>
