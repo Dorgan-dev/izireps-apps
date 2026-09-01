@@ -3,12 +3,12 @@ import axios from "axios";
 /**
  * Axios instance terpusat untuk IZIREPS API.
  *
- * - baseURL 'http://192.168.168.100:83/api/' di-proxy Vite ke backend.
+ * - baseURL 'https://izireps-demo.xirido.my.id/api/' di-proxy Vite ke backend.
  * - Interceptor membaca token dari zustand persist storage ('auth-storage')
  *   sehingga satu sumber kebenaran — tidak ada key 'token' terpisah.
  */
 const api = axios.create({
-  baseURL: "http://192.168.168.100:83/api/",
+  baseURL: "https://izireps-demo.xirido.my.id/api/",
   // baseURL: "http://192.168.168.165:8000/api/",
   headers: {
     "Content-Type": "application/json",
