@@ -5,9 +5,8 @@
     "moduleResolution": "bundler",
     "jsx": "preserve",
     "strict": false,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src"]
