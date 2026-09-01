@@ -134,7 +134,7 @@ export default function BookingItems({ booking, onReject, onConfirm }) {
             "image url:",
             booking.dp_proof_file?.startsWith("http")
               ? booking.dp_proof_file
-              : `http://192.168.168.100:8383/storage/${booking.dp_proof_file}`
+              : `http://192.168.168.100:83/storage/${booking.dp_proof_file}`
           )}
           <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800/60 flex sm:justify-start">
             <button
