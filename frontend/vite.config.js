@@ -17,14 +17,14 @@ export default defineConfig({
     proxy: {
       // Semua request ke /api akan di-forward ke Laravel backend
       '/api': {
-        target: 'http://https://izireps-demo.xirido.my.id',
+        target: 'http://192.168.168.100:83',
         // target: 'http://192.168.168.165:8000',
         changeOrigin: true,
         secure: false,
       },
       // Juga proxy endpoint Sanctum CSRF cookie
       '/sanctum': {
-        target: 'http://https://izireps-demo.xirido.my.id',
+        target: 'http://192.168.168.100:83',
         // target: 'http://192.168.168.165:8000',
         changeOrigin: true,
         secure: false,
