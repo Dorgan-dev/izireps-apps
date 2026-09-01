@@ -17,14 +17,14 @@ export default defineConfig({
     proxy: {
       // Semua request ke /api akan di-forward ke Laravel backend
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://192.168.168.100:8383',
         // target: 'http://192.168.168.165:8000',
         changeOrigin: true,
         secure: false,
       },
       // Juga proxy endpoint Sanctum CSRF cookie
       '/sanctum': {
-        target: 'http://localhost:8000',
+        target: 'http://192.168.168.100:8383',
         // target: 'http://192.168.168.165:8000',
         changeOrigin: true,
         secure: false,
